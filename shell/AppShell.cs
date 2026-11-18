@@ -6,8 +6,8 @@ using Godot;
 
 namespace FishUI;
 
-/// <summary>One page in the navigation sidebar.</summary>
-public sealed record ShellTab(string Id, string Label, Func<Screen> Create);
+/// <summary>One page in the navigation sidebar. The icon is what shows while the sidebar is narrow.</summary>
+public sealed record ShellTab(string Id, string Label, Func<Screen> Create, Texture2D Icon = null);
 
 /// <summary>
 /// The root node of a controller-first app: the background, the screen stack, modal overlays,
@@ -27,6 +27,16 @@ public partial class AppShell : Control
     private HBoxContainer _hints;
     private Control _footer;
     private Control _sidebar;
+    private Control _sidebarSlot;
+    private ColorRect _sidebarShade;
+    private Tween _sidebarTween;
+    private float _sidebarWidth = SidebarWidth;
+    private bool _sidebarCollapses;
+    private bool _sidebarOpen;
+
+    private const float SidebarWidth = 250;
+    private const float SidebarRailWidth = 76;
+    private const double SidebarSlideSeconds = 0.14;
     private Control _topBar;
     private Label _appTitle;
     private Label _pageTitle;
@@ -56,6 +66,12 @@ public partial class AppShell : Control
 
     /// <summary>The pages in the navigation sidebar, in order. Empty leaves the sidebar out.</summary>
     protected virtual IReadOnlyList<ShellTab> Tabs => Array.Empty<ShellTab>();
+
+    /// <summary>
+    /// Whether the sidebar narrows to a strip of icons while focus is in the page, and widens over
+    /// the page when focus comes back to it. On when every page has an icon.
+    /// </summary>
+    protected virtual bool SidebarCollapses => Tabs is { Count: > 0 } tabs && tabs.All(tab => tab.Icon != null);
 
     /// <summary>Applies the style, palette and background from the app's saved settings.</summary>
     protected virtual void ApplyAppearance() =>
@@ -318,6 +334,10 @@ public partial class AppShell : Control
     public void ShowMenu(string title, IReadOnlyList<(string Label, Action Action)> items, int selected = 0) =>
         OpenOverlay(new MenuOverlay(title, items, selected));
 
+    /// <summary>Opens a ring of up to eight choices, picked by direction. Items run clockwise from the top.</summary>
+    public void ShowRadial(string title, IReadOnlyList<(string Label, Action Action)> items) =>
+        OpenOverlay(new RadialMenu(title, items));
+
     /// <summary>Shows a menu and completes with the index chosen, or -1 when it is dismissed.</summary>
     /// <param name="body">Optional text explaining the question, shown above the choices.</param>
     public Task<int> ChooseAsync(string title, IReadOnlyList<string> options, string body = null)
@@ -412,24 +432,73 @@ public partial class AppShell : Control
     private void BuildSidebar(Control body)
     {
         _tabs = Tabs ?? Array.Empty<ShellTab>();
-        var column = new VBoxContainer { CustomMinimumSize = new Vector2(250, 0) };
+        _sidebarCollapses = SidebarCollapses;
+        _sidebarWidth = _sidebarCollapses ? SidebarRailWidth : SidebarWidth;
+
+        var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 5);
         foreach (var tab in _tabs)
         {
             var button = Ui.Button(tab.Label, () => SwitchTab(tab.Id));
             button.ThemeTypeVariation = "TitleButton";
             button.Alignment = HorizontalAlignment.Left;
+            if (tab.Icon != null)
+            {
+                button.Icon = tab.Icon;
+                button.AddThemeConstantOverride("icon_max_width", 30);
+                button.AddThemeConstantOverride("h_separation", 20);
+            }
+            if (_sidebarCollapses) { button.TooltipText = tab.Label; }
             column.AddChild(button);
             _tabButtons.Add(button);
         }
-        _sidebar = Ui.Chrome(column, 10, 12);
-        _sidebar.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
-        _sidebar.Visible = false;
-        body.AddChild(_sidebar);
+
+        // The slot holds the sidebar's place in the layout. The sidebar itself sits in a layer above
+        // the page, so it can widen over the page without moving it.
+        _sidebarSlot = new Control { CustomMinimumSize = new Vector2(_sidebarWidth, 0), MouseFilter = MouseFilterEnum.Ignore, Visible = false };
+        body.AddChild(_sidebarSlot);
+
+        _sidebar = new Control { ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, Visible = false };
+        AddChild(_sidebar);
+        _sidebarShade = new ColorRect { MouseFilter = MouseFilterEnum.Ignore, Modulate = Colors.Transparent };
+        var bar = Ui.Chrome(column, 10, 12);
+        foreach (var layer in new Control[] { _sidebarShade, bar })
+        {
+            layer.SetAnchorsAndOffsetsPreset(LayoutPreset.LeftWide);
+            layer.OffsetRight = SidebarWidth;
+            _sidebar.AddChild(layer);
+        }
+
+        _sidebarSlot.ItemRectChanged += PlaceSidebar;
+        body.ItemRectChanged += PlaceSidebar;
+        if (_sidebarCollapses) { GetViewport().GuiFocusChanged += focused => OpenSidebar(focused is Button button && _tabButtons.Contains(button)); }
 
         // Up and down stay inside the sidebar. Right is left to Godot, which finds the page content.
         Ui.ConfineVertical(_tabButtons);
         foreach (var button in _tabButtons) { button.FocusNeighborRight = new NodePath(); }
+    }
+
+    private void PlaceSidebar()
+    {
+        _sidebar.Position = _sidebarSlot.GlobalPosition - GlobalPosition;
+        _sidebar.Size = new Vector2(_sidebarWidth, _sidebarSlot.Size.Y);
+    }
+
+    /// <summary>Slides the sidebar between its strip of icons and its full width.</summary>
+    private void OpenSidebar(bool open)
+    {
+        if (open == _sidebarOpen) { return; }
+        _sidebarOpen = open;
+        _sidebarTween?.Kill();
+        _sidebarTween = CreateTween().SetParallel().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+        _sidebarTween.TweenMethod(Callable.From<float>(SetSidebarWidth), _sidebarWidth, open ? SidebarWidth : SidebarRailWidth, SidebarSlideSeconds);
+        _sidebarTween.TweenProperty(_sidebarShade, "modulate:a", open ? 1f : 0f, SidebarSlideSeconds);
+    }
+
+    private void SetSidebarWidth(float width)
+    {
+        _sidebarWidth = width;
+        PlaceSidebar();
     }
 
     private int TabIndex(string id) => id == null ? -1 : _tabs.ToList().FindIndex(tab => tab.Id == id);
@@ -476,8 +545,16 @@ public partial class AppShell : Control
         RefreshTopBar(screen);
         var tabIndex = TabIndex(screen?.Tab);
         _sidebar.Visible = tabIndex >= 0;
+        _sidebarSlot.Visible = tabIndex >= 0;
+        // While wide, the sidebar covers part of the page, so it takes a near-solid backing.
+        _sidebarShade.Color = new Color(Appearance.ChromeStyle.BgColor, 0.9f);
         for (var i = 0; i < _tabButtons.Count; i++)
         {
+            _tabButtons[i].AddThemeColorOverride("icon_normal_color", Appearance.BodyText);
+            foreach (var state in new[] { "icon_focus_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color" })
+            {
+                _tabButtons[i].AddThemeColorOverride(state, Appearance.StrongText);
+            }
             // The page being shown keeps an accent box. Focus is the gliding highlight on top of it.
             if (i == tabIndex) { _tabButtons[i].AddThemeStyleboxOverride("normal", Ui.CurrentMarker()); }
             else { _tabButtons[i].RemoveThemeStyleboxOverride("normal"); }

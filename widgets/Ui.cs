@@ -70,6 +70,12 @@ public static class Ui
         return box;
     }
 
+    /// <summary>
+    /// One of the library's line icons for a sidebar page: home, tv, film, collection, inbox,
+    /// settings, grid, search, games or download.
+    /// </summary>
+    public static Texture2D NavIcon(string name) => GD.Load<Texture2D>($"{FishPaths.Assets}icons/nav/{name}.svg");
+
     /// <summary>A list button: no box of its own, marked by the gliding selection highlight.</summary>
     public static Button Button(string text, System.Action pressed = null)
     {

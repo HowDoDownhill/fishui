@@ -145,6 +145,8 @@ An app that has its own root node can use the look without `AppShell`: call `App
 | `Card`, `CardRow`, `RowPage` | Artwork tiles, a sideways-scrolling row of them, and a page of rows. |
 | `HeroBanner` | A banner above a `RowPage` that describes the focused card. Call `Display` from `RowPage.CardFocused`. |
 | `QuickPanel` | A panel that slides in from the right with sliders, toggles and actions, for use over a game or video. |
+| `Ui.NavIcon` | The library's line icons for sidebar pages. Giving every `ShellTab` an icon makes the sidebar narrow to a strip of icons while focus is in the page. |
+| `RadialMenu` | A ring of up to eight choices picked by stick or D-pad direction. `AppShell.ShowRadial` opens one. |
 | `HoldButton`, `ConfirmOverlay` | A button that runs only after being held, and the question built on it. |
 | `SettingsPage`, `SettingRow` | Sections on the left, rows on the right, help for the focused row. |
 | `CarouselButton` | A value stepped left and right, as used in setting rows. |
