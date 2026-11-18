@@ -15,6 +15,9 @@ public partial class QuickPanel : Overlay
     private const int SlideDistance = 48;
     private const float SliderStep = 0.05f;
 
+    // Where a row's value starts, so a long one is cut short before it reaches the row's label.
+    private const int ValueStart = 210;
+
     private readonly string _title;
     private readonly List<Control> _rows = new();
 
@@ -97,7 +100,10 @@ public partial class QuickPanel : Overlay
         valueLabel.VerticalAlignment = VerticalAlignment.Center;
         button.AddChild(valueLabel);
         Ui.Fill(valueLabel);
+        valueLabel.OffsetLeft = ValueStart;
         valueLabel.OffsetRight = -18;
+        valueLabel.ClipText = true;
+        valueLabel.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         _rows.Add(button);
         return button;
     }
@@ -111,10 +117,10 @@ public partial class QuickPanel : Overlay
     protected override void Build(PanelContainer panel)
     {
         panel.SetAnchorsPreset(LayoutPreset.RightWide);
-        panel.OffsetLeft = -(Width + Ui.PanelGap);
-        panel.OffsetRight = -Ui.PanelGap;
-        panel.OffsetTop = Ui.PanelGap;
-        panel.OffsetBottom = -Ui.PanelGap;
+        panel.OffsetLeft = -Width;
+        panel.OffsetRight = 0;
+        panel.OffsetTop = 0;
+        panel.OffsetBottom = 0;
 
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 5);
@@ -128,8 +134,8 @@ public partial class QuickPanel : Overlay
             panel.OffsetLeft += SlideDistance;
             panel.OffsetRight += SlideDistance;
             var slide = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
-            slide.TweenProperty(panel, "offset_left", -(Width + Ui.PanelGap), OpenDuration);
-            slide.TweenProperty(panel, "offset_right", -Ui.PanelGap, OpenDuration);
+            slide.TweenProperty(panel, "offset_left", -Width, OpenDuration);
+            slide.TweenProperty(panel, "offset_right", 0, OpenDuration);
         };
     }
 

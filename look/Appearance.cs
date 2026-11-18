@@ -40,7 +40,7 @@ public static class Appearance
 
     // How much of the palette's background colour the bars lay over the window background.
     private const float ChromeOpacity = 0.55f;
-    private const int SurfaceCornerRadius = 12;
+    private const int SurfaceShadowSize = 8;
 
     // The panel behind content inside a page, such as a form. Recoloured in place by Apply.
     public static readonly StyleBoxFlat SurfaceStyle = CreateSurfaceStyle();
@@ -50,8 +50,8 @@ public static class Appearance
 
     private static StyleBoxFlat CreateSurfaceStyle()
     {
-        var style = new StyleBoxFlat { AntiAliasing = true, ShadowSize = MicaShadow.DefaultSize, ShadowOffset = MicaShadow.DefaultOffset };
-        style.SetCornerRadiusAll(SurfaceCornerRadius);
+        var style = new StyleBoxFlat { AntiAliasing = true, ShadowSize = SurfaceShadowSize, ShadowOffset = new Vector2(0, 2) };
+        style.SetCornerRadiusAll(Ui.PanelRadius);
         return style;
     }
 

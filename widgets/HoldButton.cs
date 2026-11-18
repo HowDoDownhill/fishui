@@ -31,7 +31,7 @@ public partial class HoldButton : Button
         Alignment = HorizontalAlignment.Left;
 
         _fill = new Panel { ShowBehindParent = true, Visible = false, MouseFilter = MouseFilterEnum.Ignore };
-        _fill.AddThemeStyleboxOverride("panel", Ui.Box(new Color(Appearance.WarningText, 0.35f), 10));
+        _fill.AddThemeStyleboxOverride("panel", Ui.Box(new Color(Appearance.WarningText, 0.35f)));
         AddChild(_fill);
 
         if (held != null) { Held += held; }

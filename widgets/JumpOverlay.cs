@@ -65,8 +65,8 @@ public partial class JumpOverlay : Overlay
             var index = i;
             var button = Ui.Button("");
             button.CustomMinimumSize = new Vector2(TileWidth, tileHeight);
-            button.AddThemeStyleboxOverride("normal", Ui.Box(Ui.Surface, 10));
-            button.AddThemeStyleboxOverride("hover", Ui.Box(Ui.SurfaceHi, 10));
+            button.AddThemeStyleboxOverride("normal", Ui.Box(Ui.Surface));
+            button.AddThemeStyleboxOverride("hover", Ui.Box(Ui.SurfaceHi));
 
             var text = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
             text.AddThemeConstantOverride("separation", 0);

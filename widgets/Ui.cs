@@ -20,6 +20,12 @@ public static class Ui
     /// <summary>Left and right padding inside the top bar and footer.</summary>
     public const int ChromePad = 28;
 
+    /// <summary>Corner radius of buttons, keys and other small boxes.</summary>
+    public const int Radius = 3;
+
+    /// <summary>Corner radius of panels and overlays.</summary>
+    public const int PanelRadius = 4;
+
     public static Color Text => Appearance.Text;
     public static Color TextDim => Appearance.CaptionText;
     public static Color Accent => Appearance.Accent;
@@ -29,7 +35,7 @@ public static class Ui
 
     public static ShaderMaterial Mica => GD.Load<ShaderMaterial>(MicaMaterialPath);
 
-    public static StyleBoxFlat Box(Color bg, int radius = 10, int border = 0, Color? borderColor = null, int padX = 0, int padY = 0, int expand = 0)
+    public static StyleBoxFlat Box(Color bg, int radius = Radius, int border = 0, Color? borderColor = null, int padX = 0, int padY = 0, int expand = 0)
     {
         var box = new StyleBoxFlat { BgColor = bg, BorderColor = borderColor ?? Colors.White, AntiAliasing = true };
         box.SetCornerRadiusAll(radius);
@@ -52,6 +58,18 @@ public static class Ui
         return label;
     }
 
+    /// <summary>
+    /// The box behind the list button for the page or section being shown: a faint accent wash
+    /// with an accent bar down its left edge.
+    /// </summary>
+    public static StyleBoxFlat CurrentMarker()
+    {
+        var box = Box(new Color(Appearance.Accent, 0.16f), 0, padX: 18, padY: 8);
+        box.BorderColor = Appearance.Accent;
+        box.BorderWidthLeft = 3;
+        return box;
+    }
+
     /// <summary>A list button: no box of its own, marked by the gliding selection highlight.</summary>
     public static Button Button(string text, System.Action pressed = null)
     {
@@ -64,8 +82,8 @@ public static class Ui
     public static Button ActionButton(string text, System.Action pressed = null)
     {
         var button = Button(text, pressed);
-        button.AddThemeStyleboxOverride("normal", Box(Surface, 10, padX: 18, padY: 8));
-        button.AddThemeStyleboxOverride("hover", Box(SurfaceHi, 10, padX: 18, padY: 8));
+        button.AddThemeStyleboxOverride("normal", Box(Surface, padX: 18, padY: 8));
+        button.AddThemeStyleboxOverride("hover", Box(SurfaceHi, padX: 18, padY: 8));
         return button;
     }
 
@@ -119,7 +137,7 @@ public static class Ui
     public static PanelContainer MicaPanel(Control content = null, int padX = 24, int padY = 16)
     {
         var panel = new PanelContainer { Material = Mica };
-        panel.AddThemeStyleboxOverride("panel", Box(Colors.Black, 12));
+        panel.AddThemeStyleboxOverride("panel", Box(Colors.Black, PanelRadius));
         MicaShadow.Attach(panel, MicaShadow.DefaultColor);
         if (content != null) { panel.AddChild(Pad(content, padX, padY, padX, padY)); }
         return panel;

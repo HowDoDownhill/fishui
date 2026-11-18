@@ -479,7 +479,7 @@ public partial class AppShell : Control
         for (var i = 0; i < _tabButtons.Count; i++)
         {
             // The page being shown keeps an accent box. Focus is the gliding highlight on top of it.
-            if (i == tabIndex) { _tabButtons[i].AddThemeStyleboxOverride("normal", Ui.Box(Ui.AccentDim, 10, padX: 18, padY: 8)); }
+            if (i == tabIndex) { _tabButtons[i].AddThemeStyleboxOverride("normal", Ui.CurrentMarker()); }
             else { _tabButtons[i].RemoveThemeStyleboxOverride("normal"); }
         }
         foreach (var child in _hints.GetChildren())

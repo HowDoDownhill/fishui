@@ -27,7 +27,7 @@ public partial class UiPanel : Control
     [Export] public float CloseDuration = 0.12f;
     [Export] public float RestingScale = 0.96f;
     [Export] public bool UseMica = true;
-    [Export] public int CornerRadius = 12;
+    [Export] public int CornerRadius = Ui.PanelRadius;
     [Export] public float BackdropDim = 0.0f;
     [Export] public bool CenterContent = true;
     [Export] public int ShadowSize = MicaShadow.DefaultSize;

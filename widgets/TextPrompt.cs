@@ -34,7 +34,7 @@ public partial class TextPrompt : Overlay
         column.AddChild(Ui.Label(_title, 26, variation: "CaptionLabel"));
 
         var field = new PanelContainer();
-        field.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Surface, 10, 2, Ui.Accent, 20, 14));
+        field.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Surface, Ui.Radius, 2, Ui.Accent, 20, 14));
         _display = Ui.Label("", 34);
         _display.ClipText = true;
         _display.CustomMinimumSize = new Vector2(0, 46);

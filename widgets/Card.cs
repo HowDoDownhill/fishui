@@ -15,9 +15,9 @@ public partial class Card : Button
 {
     private const int Padding = 12;
     private const int TextHeight = 62;
-    private const int CornerRadius = 8;
-    private const int SelectedCornerRadius = 10;
-    private const int ShadowSize = 20;
+    private const int CornerRadius = 2;
+    private const int SelectedCornerRadius = 2;
+    private const int ShadowSize = 14;
     private const int ShadowDrop = 6;
     private const float LiftScale = 1.04f;
     private const double LiftSeconds = 0.12;
@@ -167,7 +167,7 @@ public partial class Card : Button
     private static Control Badge(string text, int width)
     {
         var panel = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
-        panel.AddThemeStyleboxOverride("panel", Ui.Box(new Color(0, 0, 0, 0.7f), 14, 2, Ui.Accent, 10, 2));
+        panel.AddThemeStyleboxOverride("panel", Ui.Box(new Color(0, 0, 0, 0.75f), Ui.Radius, 1, Ui.Accent, 8, 1));
         panel.AddChild(Ui.Label(text, 18, Colors.White));
         panel.Position = new Vector2(Padding + width - 8 - (24 + text.Length * 11), Padding + 8);
         return panel;

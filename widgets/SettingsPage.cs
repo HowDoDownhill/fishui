@@ -145,7 +145,7 @@ public partial class SettingsPage : HBoxContainer
     {
         for (var i = 0; i < _sectionButtons.Count; i++)
         {
-            if (i == _section) { _sectionButtons[i].AddThemeStyleboxOverride("normal", Ui.Box(Ui.AccentDim, 10, padX: 18, padY: 8)); }
+            if (i == _section) { _sectionButtons[i].AddThemeStyleboxOverride("normal", Ui.CurrentMarker()); }
             else { _sectionButtons[i].RemoveThemeStyleboxOverride("normal"); }
         }
     }

@@ -4,13 +4,13 @@ namespace FishUI;
 
 public static class FocusHighlight
 {
-    private const int CornerRadius = 10;
-    private const int EdgeWidth = 3;
-    private const int GameCardCornerRadius = 8;
-    private const int RingWidth = 4;
+    private const int CornerRadius = Ui.Radius;
+    private const int EdgeWidth = 2;
+    private const int GameCardCornerRadius = 2;
+    private const int RingWidth = 3;
 
     // How far the ring sits outside a card. The carousel's card ring uses the same gap.
-    public const int RingGap = 6;
+    public const int RingGap = 4;
 
     // One style for every selection indicator, recoloured in place when the appearance changes.
     public static readonly StyleBoxFlat IndicatorStyle = CreateIndicatorStyle();
@@ -71,7 +71,7 @@ public static class FocusHighlight
         };
 
         style.SetBorderWidthAll(RingWidth);
-        style.SetCornerRadiusAll(GameCardCornerRadius + RingGap);
+        style.SetCornerRadiusAll(GameCardCornerRadius + 2);
         style.BorderColor = Appearance.Accent;
         return style;
     }

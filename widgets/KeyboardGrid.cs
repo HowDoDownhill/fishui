@@ -62,8 +62,8 @@ public partial class KeyboardGrid : VBoxContainer
     {
         var key = Ui.Button(text);
         key.CustomMinimumSize = new Vector2(width, 72);
-        key.AddThemeStyleboxOverride("normal", Ui.Box(Ui.Surface, 10));
-        key.AddThemeStyleboxOverride("hover", Ui.Box(Ui.SurfaceHi, 10));
+        key.AddThemeStyleboxOverride("normal", Ui.Box(Ui.Surface));
+        key.AddThemeStyleboxOverride("hover", Ui.Box(Ui.SurfaceHi));
         return key;
     }
 
