@@ -17,6 +17,9 @@ public static class Ui
     /// <summary>Gap between the window edge and a panel.</summary>
     public const int PanelGap = 10;
 
+    /// <summary>Left and right padding inside the top bar and footer.</summary>
+    public const int ChromePad = 28;
+
     public static Color Text => Appearance.Text;
     public static Color TextDim => Appearance.CaptionText;
     public static Color Accent => Appearance.Accent;
@@ -91,7 +94,28 @@ public static class Ui
         return button;
     }
 
-    /// <summary>A frosted panel with rounded corners and drop shadow.</summary>
+    /// <summary>A flat panel with rounded corners and drop shadow, for content inside a page.</summary>
+    public static PanelContainer Panel(Control content = null, int padX = 24, int padY = 16)
+    {
+        var panel = new PanelContainer();
+        panel.AddThemeStyleboxOverride("panel", Appearance.SurfaceStyle);
+        if (content != null) { panel.AddChild(Pad(content, padX, padY, padX, padY)); }
+        return panel;
+    }
+
+    /// <summary>A bar that runs to the window edge: the wash behind the top bar, sidebar and footer.</summary>
+    public static PanelContainer Chrome(Control content, int padX, int padY)
+    {
+        var panel = new PanelContainer();
+        panel.AddThemeStyleboxOverride("panel", Appearance.ChromeStyle);
+        panel.AddChild(Pad(content, padX, padY, padX, padY));
+        return panel;
+    }
+
+    /// <summary>
+    /// A frosted panel with rounded corners and drop shadow, for things that float over moving
+    /// content, such as a toast or controls over a video. Simple draws it flat.
+    /// </summary>
     public static PanelContainer MicaPanel(Control content = null, int padX = 24, int padY = 16)
     {
         var panel = new PanelContainer { Material = Mica };
@@ -109,7 +133,7 @@ public static class Ui
         row.AddChild(Label(title, variation: "DisplayLabel"));
         row.AddChild(Spacer(expand: true));
         foreach (var control in right) { row.AddChild(control); }
-        return Pad(MicaPanel(row, 28, 10), PanelGap, PanelGap, PanelGap, 0);
+        return Chrome(row, ChromePad, 12);
     }
 
     public static Control Spacer(int width = 0, int height = 0, bool expand = false)

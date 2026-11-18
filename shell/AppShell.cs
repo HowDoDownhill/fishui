@@ -369,7 +369,7 @@ public partial class AppShell : Control
         _clock = Ui.Label("", variation: "TitleLabel");
         row.AddChild(_clock);
 
-        _topBar = Ui.Pad(Ui.MicaPanel(row, 20, 8), Ui.PanelGap, Ui.PanelGap, Ui.PanelGap, 0);
+        _topBar = Ui.Chrome(row, Ui.ChromePad, 12);
         _topBar.Visible = false;
         layout.AddChild(_topBar);
     }
@@ -422,7 +422,7 @@ public partial class AppShell : Control
             column.AddChild(button);
             _tabButtons.Add(button);
         }
-        _sidebar = Ui.Pad(Ui.MicaPanel(column, 10, 12), Ui.PanelGap, Ui.PanelGap, 0, 0);
+        _sidebar = Ui.Chrome(column, 10, 12);
         _sidebar.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         _sidebar.Visible = false;
         body.AddChild(_sidebar);
@@ -464,7 +464,7 @@ public partial class AppShell : Control
     {
         _hints = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End, MouseFilter = MouseFilterEnum.Ignore };
         _hints.AddThemeConstantOverride("separation", 32);
-        _footer = Ui.Pad(Ui.MicaPanel(_hints, 24, 8), Ui.PanelGap, Ui.PanelGap, Ui.PanelGap, Ui.PanelGap);
+        _footer = Ui.Chrome(_hints, Ui.ChromePad, 10);
         layout.AddChild(_footer);
     }
 

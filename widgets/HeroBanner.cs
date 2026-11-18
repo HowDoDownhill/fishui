@@ -29,6 +29,7 @@ void fragment() {
     private readonly Label _title;
     private readonly Label _subtitle;
     private Tween _tween;
+    private Tween _artTween;
     private string _shown;
 
     public HeroBanner()
@@ -85,7 +86,9 @@ void fragment() {
             _eyebrow.Visible = !string.IsNullOrEmpty(eyebrow);
             _title.Text = title ?? "";
             _subtitle.Text = subtitle ?? "";
+            _artTween?.Kill();
             _art.Texture = art;
+            _art.Modulate = Colors.White;
         }
 
         _tween?.Kill();
@@ -100,5 +103,20 @@ void fragment() {
         _tween.TweenProperty(_content, "modulate:a", 0f, FadeOut);
         _tween.TweenCallback(Callable.From(Swap));
         _tween.TweenProperty(_content, "modulate:a", 1f, FadeIn);
+    }
+
+    /// <summary>
+    /// Swaps the artwork alone, leaving the text in place. For artwork that arrives after Display,
+    /// such as a backdrop still downloading when the card took focus.
+    /// </summary>
+    public void SetArt(Texture2D art)
+    {
+        if (_art.Texture == art) { return; }
+        _artTween?.Kill();
+        _art.Texture = art;
+        if (!IsInsideTree()) { return; }
+        _art.Modulate = new Color(1, 1, 1, 0);
+        _artTween = CreateTween();
+        _artTween.TweenProperty(_art, "modulate:a", 1f, FadeIn);
     }
 }

@@ -1,7 +1,7 @@
 # FishUI
 
 A controller-first interface library for Godot 4.7 and C#. It holds the interface RomBox and Padfin
-share: the Glass and Simple styles, colour palettes, animated backgrounds, frosted panels, the
+share: the Glass and Simple styles, colour palettes, animated backgrounds, frosted overlays, the
 gliding selection highlight, controller glyphs, interface sounds, and an app shell with screens,
 overlays and a settings layout.
 
@@ -111,8 +111,12 @@ redraw.
 - `Palettes.All` holds the built-in palettes. An app can add its own, or pass a `Palette` straight
   to `Apply`.
 - `Palettes.Backgrounds` names the animated backgrounds.
-- `Appearance.Styles` is Glass and Simple. Simple draws flat colours and turns on Godot's
-  low-processor mode.
+- `Appearance.Styles` is Glass and Simple. Both share one layout: bars that run edge to edge, flat
+  panels inside pages, and an accent ring on whatever has focus. Glass adds the animated background
+  and frost on overlays. Simple draws flat colours and turns on Godot's low-processor mode.
+- `Ui.Panel` is the flat panel for content inside a page. `Ui.MicaPanel` is the frosted one, for
+  things that float over moving content such as a toast or controls over a video. `Ui.Chrome` is
+  the wash behind a bar that runs to the window edge.
 
 Theme type variations in `theme.tres`: `DisplayLabel`, `TitleLabel`, `CaptionLabel`, `MutedLabel`,
 `AccentLabel`, `WarningLabel`, `DetailValueLabel`, `ListButton`, `TitleButton`, `WarningListButton`,
@@ -122,7 +126,7 @@ Other pieces:
 
 | Class | Purpose |
 |---|---|
-| `Ui` | Builders for labels, list buttons, frosted panels, prompts, padding and focus confinement. |
+| `Ui` | Builders for labels, list buttons, flat and frosted panels, prompts, padding and focus confinement. |
 | `SelectionHighlighter` | The highlight that glides between focused list buttons. Other controls call `Set`. |
 | `UiPanel` | A panel with a frosted body, shadow and open and close transitions, usable from scenes. |
 | `UiSounds` | Move, Select, Back and Switch sounds. Set `Enabled` from the app's settings. |

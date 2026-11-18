@@ -36,7 +36,7 @@ public sealed class SelectionIndicator
 
     public bool IsHostValid => GodotObject.IsInstanceValid(host) && host.IsInsideTree();
 
-    private bool DrawsRing => ringGrow.HasValue && Appearance.IsSimple;
+    private bool DrawsRing => ringGrow.HasValue;
 
     private StyleBox Style => DrawsRing ? FocusHighlight.RingStyle : FocusHighlight.IndicatorStyle;
 

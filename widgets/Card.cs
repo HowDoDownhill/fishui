@@ -89,13 +89,6 @@ public partial class Card : Button
         _shadow = new Panel { Visible = false, ShowBehindParent = true, MouseFilter = MouseFilterEnum.Ignore };
         // The selection box has slightly rounder corners than the card, and the shadow sits under the box.
         var shadowStyle = Ui.Box(new Color(0, 0, 0, 0), SelectedCornerRadius);
-        if (!Appearance.IsSimple)
-        {
-            // A soft translucent edge on the selected card: white on dark palettes, dark on light ones. Simple
-            // marks the selection with its accent ring.
-            shadowStyle.SetBorderWidthAll(2);
-            shadowStyle.BorderColor = Appearance.IsLight ? new Color(0, 0, 0, 0.35f) : new Color(1, 1, 1, 0.45f);
-        }
         shadowStyle.ShadowColor = new Color(0, 0, 0, Appearance.IsLight ? 0.2f : 0.45f);
         shadowStyle.ShadowSize = ShadowSize;
         shadowStyle.ShadowOffset = new Vector2(0, ShadowDrop);
@@ -146,15 +139,12 @@ public partial class Card : Button
     }
 
     /// <summary>
-    /// Under Glass the selected card gives up its own panel and the selection box becomes its body,
-    /// at the card's exact size, so the two read as one object in the box's colour and opacity.
-    /// Simple keeps the panel and draws its accent ring around it. Either way the card grows a
-    /// little, and the highlight follows it.
+    /// The selected card gains a drop shadow and an accent ring, and grows a little. The ring
+    /// follows the card as it grows.
     /// </summary>
     private void SetSelected(bool selected)
     {
         _shadow.Visible = selected;
-        _panel.Visible = !selected || Appearance.IsSimple;
         SelectionHighlighter.Set(this, _body, selected, 0, FocusHighlight.RingGap);
 
         _body.PivotOffset = Size / 2.0f;

@@ -3,9 +3,11 @@ using System;
 
 namespace FishUI;
 
-// The app's look. Glass draws an animated background and frosted panels. Simple draws flat colours
-// and opaque panels and turns on Godot's low-processor mode, so the screen is redrawn only when
-// something on it changes. Either style takes dark text when the palette's background is light.
+// The app's look. Both styles share one layout: bars that run edge to edge, flat panels inside
+// pages, and an accent ring on whatever has focus. Glass adds an animated background and frost on
+// overlays. Simple keeps the background and overlays flat and turns on Godot's low-processor mode,
+// so the screen is redrawn only when something on it changes. Either style takes dark text when
+// the palette's background is light.
 public static class Appearance
 {
     public const string GlassStyle = "Glass";
@@ -32,9 +34,26 @@ public static class Appearance
     private const float DarkVignette = 0.7f;
     private const float LightVignette = 0.2f;
 
-    // Simple panels sit one step off the background: lighter on dark palettes, near white on light ones.
+    // Flat panels sit one step off the background: lighter on dark palettes, near white on light ones.
     private const float DarkPanelLift = 0.08f;
     private const float LightPanelLift = 0.7f;
+
+    // How much of the palette's background colour the bars lay over the window background.
+    private const float ChromeOpacity = 0.55f;
+    private const int SurfaceCornerRadius = 12;
+
+    // The panel behind content inside a page, such as a form. Recoloured in place by Apply.
+    public static readonly StyleBoxFlat SurfaceStyle = CreateSurfaceStyle();
+
+    // The wash behind the top bar, sidebar and footer. Recoloured in place by Apply.
+    public static readonly StyleBoxFlat ChromeStyle = new();
+
+    private static StyleBoxFlat CreateSurfaceStyle()
+    {
+        var style = new StyleBoxFlat { AntiAliasing = true, ShadowSize = MicaShadow.DefaultSize, ShadowOffset = MicaShadow.DefaultOffset };
+        style.SetCornerRadiusAll(SurfaceCornerRadius);
+        return style;
+    }
 
     // Below this saturation a palette has no hue worth keeping, and the accent goes neutral.
     private const float NeutralAccentSaturation = 0.05f;
@@ -50,10 +69,10 @@ public static class Appearance
     public static Color ButtonText => IsLight ? new Color(0.17f, 0.18f, 0.21f) : new Color(0.882f, 0.894f, 0.925f);
     public static Color StrongText => IsLight ? new Color(0.05f, 0.06f, 0.07f) : new Color(0.961f, 0.965f, 0.98f);
     public static Color BodyText => IsLight ? new Color(0.18f, 0.19f, 0.22f) : new Color(0.851f, 0.863f, 0.898f);
-    public static Color CaptionText => IsLight ? new Color(0.36f, 0.38f, 0.44f) : new Color(0.635f, 0.659f, 0.733f);
-    public static Color MutedText => IsLight ? new Color(0.4f, 0.4f, 0.42f) : new Color(0.6f, 0.6f, 0.6f);
+    public static Color CaptionText => IsLight ? new Color(0.27f, 0.29f, 0.34f) : new Color(0.635f, 0.659f, 0.733f);
+    public static Color MutedText => IsLight ? new Color(0.33f, 0.34f, 0.37f) : new Color(0.6f, 0.6f, 0.6f);
     public static Color WarningText => IsLight ? new Color(0.62f, 0.34f, 0.0f) : new Color(1.0f, 0.75f, 0.38f);
-    public static Color AccentText => IsLight ? new Color(0.1f, 0.36f, 0.7f) : new Color(0.6f, 0.8f, 1.0f);
+    public static Color AccentText => Accent;
 
     // Icons drawn white in the artwork are multiplied by this, so they follow the text.
     public static Color IconTint => IsLight ? new Color(0.2f, 0.21f, 0.24f) : Colors.White;
@@ -140,12 +159,17 @@ public static class Appearance
             material.Shader = shader;
         }
 
+        Color surface = colors.Bg.Lerp(Colors.White, IsLight ? LightPanelLift : DarkPanelLift);
+        surface.A = 1.0f;
+        SurfaceStyle.BgColor = surface;
+        SurfaceStyle.ShadowColor = new Color(0, 0, 0, IsLight ? 0.12f : 0.3f);
+        ChromeStyle.BgColor = new Color(colors.Bg, ChromeOpacity);
+
         Color tint;
 
         if (IsSimple)
         {
-            tint = colors.Bg.Lerp(Colors.White, IsLight ? LightPanelLift : DarkPanelLift);
-            tint.A = 1.0f;
+            tint = surface;
         }
         else
         {
@@ -247,14 +271,12 @@ public static class Appearance
     private const int SwitchHeight = 26;
     private static string appliedSwitchKey;
 
-    // Godot's own switch is drawn in light greys that vanish on a light palette. Light palettes and
-    // the Simple style get a switch drawn here: accent track when on, a neutral track when off.
-    // Dark Glass keeps Godot's switch.
+    // Godot's own switch is drawn in light greys that vanish on a light palette, so the switch is
+    // drawn here: accent track when on, a neutral track when off.
     private static void ApplySwitchIcons(Theme theme)
     {
         string[] names = { "checked", "unchecked", "checked_disabled", "unchecked_disabled", "checked_mirrored", "unchecked_mirrored", "checked_disabled_mirrored", "unchecked_disabled_mirrored" };
-        bool custom = IsLight || IsSimple;
-        string key = custom ? $"{IsLight}:{Accent.ToHtml()}" : "";
+        string key = $"{IsLight}:{Accent.ToHtml()}";
 
         if (key == appliedSwitchKey)
         {
@@ -262,18 +284,6 @@ public static class Appearance
         }
 
         appliedSwitchKey = key;
-
-        if (!custom)
-        {
-            foreach (string name in names)
-            {
-                if (theme.HasIcon(name, "CheckButton"))
-                {
-                    theme.ClearIcon(name, "CheckButton");
-                }
-            }
-            return;
-        }
 
         Color offTrack = IsLight ? new Color(0.72f, 0.73f, 0.77f) : new Color(0.32f, 0.33f, 0.37f);
         Color knob = Colors.White;

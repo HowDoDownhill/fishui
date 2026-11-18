@@ -29,7 +29,7 @@ public partial class SettingsPage : HBoxContainer
 
         _sectionList = new VBoxContainer { CustomMinimumSize = new Vector2(280, 0) };
         _sectionList.AddThemeConstantOverride("separation", 5);
-        var sectionPanel = Ui.Pad(Ui.MicaPanel(_sectionList, 10, 12), Ui.PanelGap, Ui.PanelGap, 0, 0);
+        var sectionPanel = Ui.Pad(Ui.Panel(_sectionList, 10, 12), Ui.PanelGap, Ui.PanelGap, 0, 0);
         sectionPanel.SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         AddChild(sectionPanel);
 
@@ -50,7 +50,7 @@ public partial class SettingsPage : HBoxContainer
         _help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _help.CustomMinimumSize = new Vector2(0, 60);
         right.AddChild(Ui.Pad(_help, 20, 0, 20, 0));
-        var optionPanel = Ui.MicaPanel(right, 10, 12);
+        var optionPanel = Ui.Panel(right, 10, 12);
         optionPanel.SizeFlagsVertical = SizeFlags.ExpandFill;
         AddChild(Ui.Pad(optionPanel, Ui.PanelGap, Ui.PanelGap, Ui.PanelGap, 0));
     }

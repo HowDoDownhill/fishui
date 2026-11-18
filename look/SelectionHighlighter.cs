@@ -30,8 +30,8 @@ public static class SelectionHighlighter
         focusedListButton = null;
     }
 
-    // A ringGrow marks a game in the grid or list: under Simple the indicator draws the accent ring
-    // that far outside the area. Glass keeps the usual indicator grown by grow.
+    // A ringGrow marks a card: the indicator draws the accent ring that far outside the area.
+    // Without one, the indicator is the usual washed box grown by grow.
     public static void Set(Control item, Control area, bool selected, float grow = 0.0f, float? ringGrow = null)
     {
         if (!GodotObject.IsInstanceValid(item) || !GodotObject.IsInstanceValid(area) || item.GetParent() is not Control host || !host.IsInsideTree())
