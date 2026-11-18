@@ -29,12 +29,13 @@ public partial class AppShell : Control
     private Control _sidebar;
     private Control _sidebarSlot;
     private ColorRect _sidebarShade;
+    private Control _sidebarBar;
     private Tween _sidebarTween;
-    private float _sidebarWidth = SidebarWidth;
+    private float _sidebarWidth = SidebarMinWidth;
     private bool _sidebarCollapses;
     private bool _sidebarOpen;
 
-    private const float SidebarWidth = 250;
+    private const float SidebarMinWidth = 250;
     private const float SidebarRailWidth = 76;
     private const double SidebarSlideSeconds = 0.14;
     private Control _topBar;
@@ -433,8 +434,6 @@ public partial class AppShell : Control
     {
         _tabs = Tabs ?? Array.Empty<ShellTab>();
         _sidebarCollapses = SidebarCollapses;
-        _sidebarWidth = _sidebarCollapses ? SidebarRailWidth : SidebarWidth;
-
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 5);
         foreach (var tab in _tabs)
@@ -455,19 +454,20 @@ public partial class AppShell : Control
 
         // The slot holds the sidebar's place in the layout. The sidebar itself sits in a layer above
         // the page, so it can widen over the page without moving it.
-        _sidebarSlot = new Control { CustomMinimumSize = new Vector2(_sidebarWidth, 0), MouseFilter = MouseFilterEnum.Ignore, Visible = false };
+        _sidebarSlot = new Control { MouseFilter = MouseFilterEnum.Ignore, Visible = false };
         body.AddChild(_sidebarSlot);
 
         _sidebar = new Control { ClipContents = true, MouseFilter = MouseFilterEnum.Ignore, Visible = false };
         AddChild(_sidebar);
         _sidebarShade = new ColorRect { MouseFilter = MouseFilterEnum.Ignore, Modulate = Colors.Transparent };
-        var bar = Ui.Chrome(column, 10, 12);
-        foreach (var layer in new Control[] { _sidebarShade, bar })
+        _sidebarBar = Ui.Chrome(column, 10, 12);
+        foreach (var layer in new[] { _sidebarShade, _sidebarBar })
         {
-            layer.SetAnchorsAndOffsetsPreset(LayoutPreset.LeftWide);
-            layer.OffsetRight = SidebarWidth;
             _sidebar.AddChild(layer);
+            layer.SetAnchorsAndOffsetsPreset(LayoutPreset.LeftWide);
         }
+        _sidebarWidth = _sidebarCollapses ? SidebarRailWidth : SidebarFullWidth;
+        _sidebarSlot.CustomMinimumSize = new Vector2(_sidebarWidth, 0);
 
         _sidebarSlot.ItemRectChanged += PlaceSidebar;
         body.ItemRectChanged += PlaceSidebar;
@@ -478,10 +478,15 @@ public partial class AppShell : Control
         foreach (var button in _tabButtons) { button.FocusNeighborRight = new NodePath(); }
     }
 
+    /// <summary>Wide enough for the longest page name.</summary>
+    private float SidebarFullWidth => Mathf.Max(SidebarMinWidth, _sidebarBar.GetCombinedMinimumSize().X);
+
     private void PlaceSidebar()
     {
         _sidebar.Position = _sidebarSlot.GlobalPosition - GlobalPosition;
         _sidebar.Size = new Vector2(_sidebarWidth, _sidebarSlot.Size.Y);
+        _sidebarShade.OffsetRight = SidebarFullWidth;
+        _sidebarBar.OffsetRight = SidebarFullWidth;
     }
 
     /// <summary>Slides the sidebar between its strip of icons and its full width.</summary>
@@ -491,7 +496,7 @@ public partial class AppShell : Control
         _sidebarOpen = open;
         _sidebarTween?.Kill();
         _sidebarTween = CreateTween().SetParallel().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
-        _sidebarTween.TweenMethod(Callable.From<float>(SetSidebarWidth), _sidebarWidth, open ? SidebarWidth : SidebarRailWidth, SidebarSlideSeconds);
+        _sidebarTween.TweenMethod(Callable.From<float>(SetSidebarWidth), _sidebarWidth, open ? SidebarFullWidth : SidebarRailWidth, SidebarSlideSeconds);
         _sidebarTween.TweenProperty(_sidebarShade, "modulate:a", open ? 1f : 0f, SidebarSlideSeconds);
     }
 
