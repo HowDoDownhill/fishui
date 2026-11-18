@@ -1,0 +1,173 @@
+# FishUI
+
+A controller-first interface library for Godot 4.7 and C#. It holds the interface RomBox and Padfin
+share: the Glass and Simple styles, colour palettes, animated backgrounds, frosted panels, the
+gliding selection highlight, controller glyphs, interface sounds, and an app shell with screens,
+overlays and a settings layout.
+
+Everything is in the `FishUI` namespace.
+
+## Adding it to an app
+
+FishUI is a Godot addon that lives at `res://addons/fishui`. Mount this repository there as a git
+submodule:
+
+```
+git submodule add <this repository's URL> addons/fishui
+```
+
+Godot compiles the C# into the app's own assembly, so there is nothing else to reference.
+
+The app also needs:
+
+1. **Controller Icons** at `res://addons/controller_icons`, with its `ControllerIcons` autoload.
+   FishUI draws button prompts with it.
+2. **The theme and font** in `project.godot`:
+
+   ```
+   [gui]
+   theme/custom="res://addons/fishui/assets/themes/theme.tres"
+   theme/custom_font="res://addons/fishui/assets/fonts/InterVariable.woff2"
+   ```
+
+3. A 1920 by 1080 viewport with `canvas_items` stretch. Sizes in the library are 1080p units.
+
+## The app shell
+
+Subclass `AppShell`, put the subclass on the root `Control` of the main scene, and override the
+hooks the app needs.
+
+```csharp
+using FishUI;
+
+public partial class App : AppShell
+{
+    protected override IReadOnlyList<ShellTab> Tabs { get; } = new[]
+    {
+        new ShellTab("home", "Home", () => new HomeScreen()),
+        new ShellTab("settings", "Settings", () => new SettingsScreen()),
+    };
+
+    protected override void ApplyAppearance() =>
+        Appearance.Apply(Config.Style, Config.Background, Config.Theme);
+
+    protected override Task StartAsync(string[] args)
+    {
+        SwitchTab("home");
+        return Task.CompletedTask;
+    }
+}
+```
+
+The shell draws the background, a top bar, the sidebar built from `Tabs`, and a footer of button
+prompts. It keeps a stack of screens and a stack of modal overlays, and sends input to the top one.
+
+| Call | Effect |
+|---|---|
+| `Push`, `Pop`, `Replace`, `ResetTo` | Move through the screen stack. |
+| `SwitchTab(id)` | Open a sidebar page. LB and RB step through the pages. |
+| `ShowMenu`, `ChooseAsync` | A modal list of choices. `ChooseAsync` completes with the index, or -1. |
+| `ShowJump` | A grid of tiles for picking one of many. |
+| `PromptAsync` | Text entry with the on-screen keyboard. Null when cancelled. |
+| `OpenOverlay`, `CloseOverlay` | Any `Overlay` subclass, such as `ProgressOverlay`. |
+| `Toast` | A short message at the top of the window. |
+| `ReapplyAppearance` | Apply changed appearance settings and rebuild the current page. |
+| `QuitAsync` | Exit, after the top screen's `OnQuitAsync`. |
+
+Hooks to override: `Tabs`, `ApplyAppearance`, `InterfaceSize`, `StartFullscreen`, `WindowedSize`,
+`OnFullscreenChanged`, `TopBarTitle`, `TopBarAvailable`, `BuildTopBarStart`, `BuildTopBarEnd`,
+`OnChromeRefreshed`, `StartAsync`, `QuitAsync`.
+
+### Screens
+
+A `Screen` is one full page. Build its controls in `OnEnter`.
+
+| Member | Purpose |
+|---|---|
+| `Tab` | The sidebar page this screen is. Null for pushed screens, which hide the sidebar. |
+| `Title`, `SetInfo` | The page name and a status line in the top bar. |
+| `Hints` | The footer prompts, as (input action, label) pairs. |
+| `ShowChrome`, `ShowTopBar` | Hide the bars, for full-window content. |
+| `FocusDefault` | Focus the starting control. |
+| `OnInput`, `OnRawInput` | Input the focused control did not use, and input before focus sees it. |
+| `OnBack` | B. Return true to stay open. |
+| `OnShoulderHold` | LB or RB held. |
+| `OnResume`, `OnQuitAsync` | A screen above closed; the app is exiting. |
+
+### Input
+
+`Actions` names the input actions: `Accept`, `Back`, `X`, `Y`, `Lb`, `Rb`, `Start`, `Fullscreen`.
+The shell registers them with keyboard keys beside the controller buttons (F2, F3, Page Up,
+Page Down, F1, F11) and repeats a held D-pad or stick direction.
+
+## The look
+
+`Appearance.Apply(style, background, palette)` sets everything: the background shader, panel
+material, theme colours, selection highlight and accent. Read `Appearance.Accent`, `Text`,
+`CaptionText`, `IsLight` and `IsSimple` when drawing, and subscribe to `Appearance.Changed` to
+redraw.
+
+- `Palettes.All` holds the built-in palettes. An app can add its own, or pass a `Palette` straight
+  to `Apply`.
+- `Palettes.Backgrounds` names the animated backgrounds.
+- `Appearance.Styles` is Glass and Simple. Simple draws flat colours and turns on Godot's
+  low-processor mode.
+
+Theme type variations in `theme.tres`: `DisplayLabel`, `TitleLabel`, `CaptionLabel`, `MutedLabel`,
+`AccentLabel`, `WarningLabel`, `DetailValueLabel`, `ListButton`, `TitleButton`, `WarningListButton`,
+`FlatButton`, `DisplayButton`.
+
+Other pieces:
+
+| Class | Purpose |
+|---|---|
+| `Ui` | Builders for labels, list buttons, frosted panels, prompts, padding and focus confinement. |
+| `SelectionHighlighter` | The highlight that glides between focused list buttons. Other controls call `Set`. |
+| `UiPanel` | A panel with a frosted body, shadow and open and close transitions, usable from scenes. |
+| `UiSounds` | Move, Select, Back and Switch sounds. Set `Enabled` from the app's settings. |
+| `ControllerGlyph` | Puts the glyph for an input action on a button. |
+| `InterfaceScale` | Applies the interface size setting, with an automatic size for handhelds. |
+| `MicaShadow`, `FocusHighlight`, `FocusCycler` | Shadow for frosted panels, highlight styles, focus stepping. |
+
+An app that has its own root node can use the look without `AppShell`: call `Appearance.Apply`,
+`SelectionHighlighter.Attach(GetViewport())`, add a `UiSounds` node, and put
+`Appearance.BackgroundMaterial` on a full-window `ColorRect`.
+
+## Widgets
+
+| Class | Purpose |
+|---|---|
+| `Card`, `CardRow`, `RowPage` | Artwork tiles, a sideways-scrolling row of them, and a page of rows. |
+| `SettingsPage`, `SettingRow` | Sections on the left, rows on the right, help for the focused row. |
+| `CarouselButton` | A value stepped left and right, as used in setting rows. |
+| `MenuOverlay`, `JumpOverlay`, `TextPrompt`, `ProgressOverlay` | The modal overlays behind the shell's calls. |
+| `KeyboardGrid` | The on-screen keyboard, for use outside `TextPrompt`. |
+| `FocusScroller` | Scrolls a `ScrollContainer` to follow focus with a margin, or to align a section. |
+| `SeekBar` | A position bar with marks and a scrub preview. |
+
+## Steam
+
+`SteamShortcuts` adds the app to Steam as a non-Steam game with artwork and Steam Input turned on.
+`SteamOffer` asks the user and restarts the app through Steam.
+
+```csharp
+SteamShortcuts.Configure("Padfin", "padfin");
+await SteamOffer.OfferIfUsefulAsync(Config.OfferSteamLaunch, () => Config.OfferSteamLaunch = false);
+```
+
+Artwork is read from `res://assets/steam/` by default: `capsule.png`, `wide_capsule.png`,
+`hero.png` and `logo.png`.
+
+## Developer arguments
+
+`AppShell` reads these after `--` on the Godot command line.
+
+| Argument | Effect |
+|---|---|
+| `--windowed` | Start in a window. |
+| `--keys ui_down,hold:fish_rb,joy:0,quit` | Press input actions in order. `hold:` holds one down. `joy:N` presses controller button N. `quit` exits. |
+| `--shot <png> [seconds]` | Save a screenshot after a delay, then exit. |
+
+## Licence
+
+GPL-3.0. The Inter font is under the SIL Open Font License; see `assets/fonts/Inter-LICENSE.txt`.
