@@ -68,6 +68,7 @@ prompts. It keeps a stack of screens and a stack of modal overlays, and sends in
 | `SwitchTab(id)` | Open a sidebar page. LB and RB step through the pages. |
 | `ShowMenu`, `ChooseAsync` | A modal list of choices. `ChooseAsync` completes with the index, or -1. |
 | `ShowJump` | A grid of tiles for picking one of many. |
+| `ConfirmHoldAsync` | A question whose risky answer must be held down. True only after the hold. |
 | `PromptAsync` | Text entry with the on-screen keyboard. Null when cancelled. |
 | `OpenOverlay`, `CloseOverlay` | Any `Overlay` subclass, such as `ProgressOverlay`. |
 | `Toast` | A short message at the top of the window. |
@@ -138,6 +139,9 @@ An app that has its own root node can use the look without `AppShell`: call `App
 | Class | Purpose |
 |---|---|
 | `Card`, `CardRow`, `RowPage` | Artwork tiles, a sideways-scrolling row of them, and a page of rows. |
+| `HeroBanner` | A banner above a `RowPage` that describes the focused card. Call `Display` from `RowPage.CardFocused`. |
+| `QuickPanel` | A panel that slides in from the right with sliders, toggles and actions, for use over a game or video. |
+| `HoldButton`, `ConfirmOverlay` | A button that runs only after being held, and the question built on it. |
 | `SettingsPage`, `SettingRow` | Sections on the left, rows on the right, help for the focused row. |
 | `CarouselButton` | A value stepped left and right, as used in setting rows. |
 | `MenuOverlay`, `JumpOverlay`, `TextPrompt`, `ProgressOverlay` | The modal overlays behind the shell's calls. |

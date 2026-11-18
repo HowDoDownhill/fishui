@@ -16,6 +16,9 @@ public partial class RowPage : ScrollContainer
 
     public List<CardRow> Rows { get; } = new();
 
+    /// <summary>Raised when focus lands on a card, with the row it is in. A HeroBanner listens to this.</summary>
+    public event Action<CardRow, Card> CardFocused;
+
     public RowPage()
     {
         HorizontalScrollMode = ScrollMode.Disabled;
@@ -59,7 +62,14 @@ public partial class RowPage : ScrollContainer
         _rows.AddChild(row);
         Rows.Add(row);
         var index = Rows.Count - 1;
-        foreach (var card in row.Cards) { card.FocusEntered += () => Link(card, index); }
+        foreach (var card in row.Cards)
+        {
+            card.FocusEntered += () =>
+            {
+                Link(card, index);
+                CardFocused?.Invoke(row, card);
+            };
+        }
     }
 
     /// <summary>Call after the last row: leaves room below it so it can reach the top position too.</summary>

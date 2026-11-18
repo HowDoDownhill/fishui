@@ -19,6 +19,8 @@ public partial class Card : Button
     private const int SelectedCornerRadius = 10;
     private const int ShadowSize = 20;
     private const int ShadowDrop = 6;
+    private const float LiftScale = 1.04f;
+    private const double LiftSeconds = 0.12;
 
     /// <summary>
     /// How far the selected card's shadow reaches above and below it. A scrolling container needs
@@ -32,6 +34,17 @@ public partial class Card : Button
 
     /// <summary>Fetches the artwork. LoadImage awaits it; a null result leaves the placeholder initial.</summary>
     public Func<Task<Texture2D>> ImageSource { get; set; }
+
+    public string Title { get; private set; }
+    public string Subtitle { get; private set; }
+
+    /// <summary>The artwork now showing, or null while the placeholder initial is.</summary>
+    public Texture2D Image => IsInstanceValid(_image) ? _image.Texture : null;
+
+    // Everything the card draws sits in here, so the selected card can grow without its container
+    // resetting the scale.
+    private Control _body;
+    private Tween _lift;
 
     private TextureRect _image;
     private Panel _panel;
@@ -59,6 +72,8 @@ public partial class Card : Button
     /// <summary>Builds the card. A subclass with its own constructor calls this once.</summary>
     protected void Build(string title, string subtitle, CardShape shape, int width, double progress = 0, string badge = null, bool showText = true)
     {
+        Title = title;
+        Subtitle = subtitle;
         var imageSize = ImageSize(shape, width);
         CustomMinimumSize = imageSize + new Vector2(Padding * 2, Padding * 2 + (showText ? TextHeight : 0));
         FocusMode = FocusModeEnum.All;
@@ -66,6 +81,10 @@ public partial class Card : Button
         {
             AddThemeStyleboxOverride(state, new StyleBoxEmpty());
         }
+
+        _body = new Control { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_body);
+        Ui.Fill(_body);
 
         _shadow = new Panel { Visible = false, ShowBehindParent = true, MouseFilter = MouseFilterEnum.Ignore };
         // The selection box has slightly rounder corners than the card, and the shadow sits under the box.
@@ -81,12 +100,12 @@ public partial class Card : Button
         shadowStyle.ShadowSize = ShadowSize;
         shadowStyle.ShadowOffset = new Vector2(0, ShadowDrop);
         _shadow.AddThemeStyleboxOverride("panel", shadowStyle);
-        AddChild(_shadow);
+        _body.AddChild(_shadow);
         Ui.Fill(_shadow);
 
         _panel = new Panel { MouseFilter = MouseFilterEnum.Ignore };
         _panel.AddThemeStyleboxOverride("panel", Ui.Box(new Color(0, 0, 0, Appearance.IsLight ? 0.07f : 0.25f), CornerRadius));
-        AddChild(_panel);
+        _body.AddChild(_panel);
         Ui.Fill(_panel);
 
         var origin = new Vector2(Padding, Padding);
@@ -96,7 +115,7 @@ public partial class Card : Button
         initial.Modulate = new Color(1, 1, 1, 0.35f);
         initial.HorizontalAlignment = HorizontalAlignment.Center;
         initial.VerticalAlignment = VerticalAlignment.Center;
-        AddChild(initial);
+        _body.AddChild(initial);
 
         _image = new TextureRect
         {
@@ -106,21 +125,21 @@ public partial class Card : Button
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
             MouseFilter = MouseFilterEnum.Ignore,
         };
-        AddChild(_image);
+        _body.AddChild(_image);
 
         if (showText)
         {
-            AddChild(TextLine(title, 22, null, Padding + imageSize.Y + 6, width));
-            AddChild(TextLine(subtitle, 19, "CaptionLabel", Padding + imageSize.Y + 34, width));
+            _body.AddChild(TextLine(title, 22, null, Padding + imageSize.Y + 6, width));
+            _body.AddChild(TextLine(subtitle, 19, "CaptionLabel", Padding + imageSize.Y + 34, width));
         }
 
         if (progress > 0)
         {
             var bar = new Vector2(Padding, Padding + imageSize.Y - 8);
-            AddChild(new ColorRect { Color = new Color(0, 0, 0, 0.6f), Position = bar, Size = new Vector2(width, 8), MouseFilter = MouseFilterEnum.Ignore });
-            AddChild(new ColorRect { Color = Ui.Accent, Position = bar, Size = new Vector2(width * (float)(Math.Min(progress, 100) / 100.0), 8), MouseFilter = MouseFilterEnum.Ignore });
+            _body.AddChild(new ColorRect { Color = new Color(0, 0, 0, 0.6f), Position = bar, Size = new Vector2(width, 8), MouseFilter = MouseFilterEnum.Ignore });
+            _body.AddChild(new ColorRect { Color = Ui.Accent, Position = bar, Size = new Vector2(width * (float)(Math.Min(progress, 100) / 100.0), 8), MouseFilter = MouseFilterEnum.Ignore });
         }
-        if (!string.IsNullOrEmpty(badge)) { AddChild(Badge(badge, width)); }
+        if (!string.IsNullOrEmpty(badge)) { _body.AddChild(Badge(badge, width)); }
 
         FocusEntered += () => SetSelected(true);
         FocusExited += () => SetSelected(false);
@@ -129,13 +148,19 @@ public partial class Card : Button
     /// <summary>
     /// Under Glass the selected card gives up its own panel and the selection box becomes its body,
     /// at the card's exact size, so the two read as one object in the box's colour and opacity.
-    /// Simple keeps the panel and draws its accent ring around it.
+    /// Simple keeps the panel and draws its accent ring around it. Either way the card grows a
+    /// little, and the highlight follows it.
     /// </summary>
     private void SetSelected(bool selected)
     {
         _shadow.Visible = selected;
         _panel.Visible = !selected || Appearance.IsSimple;
-        SelectionHighlighter.Set(this, this, selected, 0, FocusHighlight.RingGap);
+        SelectionHighlighter.Set(this, _body, selected, 0, FocusHighlight.RingGap);
+
+        _body.PivotOffset = Size / 2.0f;
+        _lift?.Kill();
+        _lift = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        _lift.TweenProperty(_body, "scale", selected ? new Vector2(LiftScale, LiftScale) : Vector2.One, LiftSeconds);
     }
 
     private static Label TextLine(string text, int size, string variation, float y, int width)

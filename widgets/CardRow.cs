@@ -9,6 +9,8 @@ public partial class CardRow : VBoxContainer
 {
     public List<Card> Cards { get; } = new();
 
+    public string Title { get; }
+
     private Card _lastFocused;
 
     /// <summary>The card focus lands on when it enters this row: the one it left from, or the first.</summary>
@@ -18,6 +20,7 @@ public partial class CardRow : VBoxContainer
 
     public CardRow(string title, IEnumerable<Card> cards, Action<Card> pressed)
     {
+        Title = title;
         AddThemeConstantOverride("separation", 6);
         AddChild(Ui.Pad(Ui.Label(title, 30), Ui.Margin, 0, 0, 0));
 

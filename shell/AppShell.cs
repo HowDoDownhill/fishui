@@ -328,6 +328,18 @@ public partial class AppShell : Control
         return result.Task;
     }
 
+    /// <summary>
+    /// Asks about something that cannot be undone. Completes with true only after the risky choice
+    /// is held down; B, or the safe choice, completes with false.
+    /// </summary>
+    /// <param name="holdLabel">Names the action and the hold, such as "Hold to delete".</param>
+    public Task<bool> ConfirmHoldAsync(string title, string body, string holdLabel, string cancelLabel = "Cancel")
+    {
+        var result = new TaskCompletionSource<bool>();
+        OpenOverlay(new ConfirmOverlay(title, body, holdLabel, cancelLabel, answer => result.TrySetResult(answer)));
+        return result.Task;
+    }
+
     /// <summary>Asks for text with the on-screen keyboard. Null when cancelled.</summary>
     public Task<string> PromptAsync(string title, string initial = "", bool secret = false)
     {
