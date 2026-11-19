@@ -62,7 +62,7 @@ public partial class MenuOverlay : Overlay
             button.Pressed += () =>
             {
                 _chosen = true;
-                AppShell.I.CloseOverlay(this);
+                Dismiss();
                 action?.Invoke();
             };
             list.AddChild(button);

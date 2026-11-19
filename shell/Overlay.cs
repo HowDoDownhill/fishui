@@ -4,11 +4,15 @@ namespace FishUI;
 
 /// <summary>
 /// A modal layer above the screens: menus, prompts and progress. It is a UiPanel, so it gets the
-/// frosted panel, drop shadow and scale-fade transition. Open one with AppShell.OpenOverlay.
+/// frosted panel, drop shadow and scale-fade transition. Open one with AppShell.OpenOverlay, or with
+/// OverlayHost.Open in an app that has its own scenes.
 /// </summary>
 public abstract partial class Overlay : UiPanel
 {
     public Control PreviousFocus;
+
+    /// <summary>The layer this overlay was opened in.</summary>
+    public OverlayHost Host;
 
     protected Overlay()
     {
@@ -36,6 +40,6 @@ public abstract partial class Overlay : UiPanel
     /// <summary>Called when the overlay is dismissed, before it fades out.</summary>
     public virtual void OnDismissed() { }
 
-    /// <summary>Closes this overlay through the shell, which returns focus to where it was.</summary>
-    protected void Dismiss() => AppShell.I.CloseOverlay(this);
+    /// <summary>Closes this overlay through its host, which returns focus to where it was.</summary>
+    protected void Dismiss() => Host.Close(this);
 }

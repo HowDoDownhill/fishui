@@ -7,7 +7,7 @@ namespace FishUI;
 /// <summary>
 /// A panel that slides in from the right over whatever is on screen, for settings wanted in the
 /// middle of a game or a video: volume, a toggle, a short list of actions. Add rows, then open it
-/// with AppShell.OpenOverlay. B closes it.
+/// with AppShell.OpenOverlay or OverlayHost.Open. B closes it.
 /// </summary>
 public partial class QuickPanel : Overlay
 {

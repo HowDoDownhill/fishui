@@ -71,7 +71,7 @@ public partial class TextPrompt : Overlay
     {
         if (_result.Task.IsCompleted) { return; }
         _answer = value;
-        AppShell.I.CloseOverlay(this);
+        Dismiss();
     }
 
     public override void FocusDefault() => _keys.FocusFirst();

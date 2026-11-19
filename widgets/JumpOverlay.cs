@@ -86,7 +86,7 @@ public partial class JumpOverlay : Overlay
 
             button.Pressed += () =>
             {
-                AppShell.I.CloseOverlay(this);
+                Dismiss();
                 _chosen?.Invoke(index);
             };
             grid.AddChild(button);

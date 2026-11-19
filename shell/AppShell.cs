@@ -19,11 +19,9 @@ public partial class AppShell : Control
     public static AppShell I { get; private set; }
 
     private readonly List<Screen> _stack = new();
-    private readonly List<Overlay> _overlays = new();
     private readonly List<Button> _tabButtons = new();
     private IReadOnlyList<ShellTab> _tabs = Array.Empty<ShellTab>();
     private Control _screenHost;
-    private Control _overlayHost;
     private HBoxContainer _hints;
     private Control _footer;
     private Control _sidebar;
@@ -61,7 +59,10 @@ public partial class AppShell : Control
 
     public Screen Current => _stack.Count > 0 ? _stack[^1] : null;
     public int StackDepth => _stack.Count;
-    public Overlay TopOverlay => _overlays.Count > 0 ? _overlays[^1] : null;
+    public Overlay TopOverlay => Overlays.Top;
+
+    /// <summary>The layer that holds open overlays.</summary>
+    public OverlayHost Overlays { get; private set; }
 
     // ---- Hooks for the app ----
 
@@ -158,9 +159,8 @@ public partial class AppShell : Control
 
         BuildFooter(layout);
 
-        _overlayHost = new Control { MouseFilter = MouseFilterEnum.Ignore };
-        Ui.Fill(_overlayHost);
-        AddChild(_overlayHost);
+        Overlays = new OverlayHost { FocusFallback = () => Current?.RestoreFocus() };
+        AddChild(Overlays);
 
         BuildToast();
         RunDeveloperArguments(args);
@@ -277,7 +277,7 @@ public partial class AppShell : Control
     /// <summary>Closes every screen and overlay and shows this screen alone.</summary>
     public void ResetTo(Screen screen)
     {
-        foreach (var overlay in _overlays.ToArray()) { CloseOverlay(overlay); }
+        Overlays.CloseAll();
         foreach (var old in _stack) { old.QueueFree(); }
         _stack.Clear();
         _stack.Add(screen);
@@ -305,69 +305,37 @@ public partial class AppShell : Control
 
     // ---- Overlays ----
 
-    public void OpenOverlay(Overlay overlay)
-    {
-        overlay.PreviousFocus = GetViewport().GuiGetFocusOwner();
-        _overlays.Add(overlay);
-        _overlayHost.AddChild(overlay);
-        overlay.Open();
-        overlay.FocusDefault();
-    }
+    public void OpenOverlay(Overlay overlay) => Overlays.Open(overlay);
 
-    public void CloseOverlay(Overlay overlay)
-    {
-        if (!_overlays.Remove(overlay)) { return; }
-        overlay.Closed += overlay.QueueFree;
-        overlay.Close();
-        var focus = overlay.PreviousFocus;
-        if (focus != null && IsInstanceValid(focus) && focus.IsInsideTree() && focus.IsVisibleInTree()) { focus.GrabFocus(); }
-        else if (TopOverlay != null) { TopOverlay.FocusDefault(); }
-        else { GetViewport().GuiReleaseFocus(); Current?.RestoreFocus(); }
-        // Last, because code waiting on the overlay's answer may open the next overlay right away,
-        // and that one must take focus after this one has given it back.
-        overlay.OnDismissed();
-    }
+    public void CloseOverlay(Overlay overlay) => Overlays.Close(overlay);
 
     /// <summary>Opens a grid of tiles for picking one of many.</summary>
     public void ShowJump(string title, IReadOnlyList<(string Label, string Caption)> tiles, int selected, Action<int> chosen) =>
-        OpenOverlay(new JumpOverlay(title, tiles, selected, chosen));
+        Overlays.ShowJump(title, tiles, selected, chosen);
 
     public void ShowMenu(string title, IReadOnlyList<(string Label, Action Action)> items, int selected = 0) =>
-        OpenOverlay(new MenuOverlay(title, items, selected));
+        Overlays.ShowMenu(title, items, selected);
 
     /// <summary>Opens a ring of up to eight choices, picked by direction. Items run clockwise from the top.</summary>
     public void ShowRadial(string title, IReadOnlyList<(string Label, Action Action)> items) =>
-        OpenOverlay(new RadialMenu(title, items));
+        Overlays.ShowRadial(title, items);
 
     /// <summary>Shows a menu and completes with the index chosen, or -1 when it is dismissed.</summary>
     /// <param name="body">Optional text explaining the question, shown above the choices.</param>
-    public Task<int> ChooseAsync(string title, IReadOnlyList<string> options, string body = null)
-    {
-        var result = new TaskCompletionSource<int>();
-        var items = options.Select((label, index) => (label, (Action)(() => result.TrySetResult(index)))).ToList();
-        OpenOverlay(new MenuOverlay(title, items, 0, () => result.TrySetResult(-1), body));
-        return result.Task;
-    }
+    public Task<int> ChooseAsync(string title, IReadOnlyList<string> options, string body = null) =>
+        Overlays.ChooseAsync(title, options, body);
 
     /// <summary>
     /// Asks about something that cannot be undone. Completes with true only after the risky choice
     /// is held down; B, or the safe choice, completes with false.
     /// </summary>
     /// <param name="holdLabel">Names the action and the hold, such as "Hold to delete".</param>
-    public Task<bool> ConfirmHoldAsync(string title, string body, string holdLabel, string cancelLabel = "Cancel")
-    {
-        var result = new TaskCompletionSource<bool>();
-        OpenOverlay(new ConfirmOverlay(title, body, holdLabel, cancelLabel, answer => result.TrySetResult(answer)));
-        return result.Task;
-    }
+    public Task<bool> ConfirmHoldAsync(string title, string body, string holdLabel, string cancelLabel = "Cancel") =>
+        Overlays.ConfirmHoldAsync(title, body, holdLabel, cancelLabel);
 
     /// <summary>Asks for text with the on-screen keyboard. Null when cancelled.</summary>
-    public Task<string> PromptAsync(string title, string initial = "", bool secret = false)
-    {
-        var prompt = new TextPrompt(title, initial, secret);
-        OpenOverlay(prompt);
-        return prompt.Result;
-    }
+    public Task<string> PromptAsync(string title, string initial = "", bool secret = false) =>
+        Overlays.PromptAsync(title, initial, secret);
 
     // ---- Chrome ----
 
@@ -626,8 +594,7 @@ public partial class AppShell : Control
 
     public override void _Input(InputEvent e)
     {
-        var overlay = TopOverlay;
-        var handled = overlay != null ? overlay.OnRawInput(e) : Current?.OnRawInput(e) ?? false;
+        var handled = Overlays.HasOverlay ? Overlays.HandleRawInput(e) : Current?.OnRawInput(e) ?? false;
         if (handled) { GetViewport().SetInputAsHandled(); }
     }
 
@@ -640,17 +607,7 @@ public partial class AppShell : Control
             return;
         }
 
-        var overlay = TopOverlay;
-        if (overlay != null)
-        {
-            if (overlay.OnInput(e)) { GetViewport().SetInputAsHandled(); }
-            else if (e.IsActionPressed(Actions.Back))
-            {
-                CloseOverlay(overlay);
-                GetViewport().SetInputAsHandled();
-            }
-            return;
-        }
+        if (Overlays.HandleInput(e)) { return; }
 
         var screen = Current;
         if (screen == null) { return; }
