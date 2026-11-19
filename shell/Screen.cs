@@ -27,6 +27,12 @@ public abstract partial class Screen : Control
     /// <summary>False hides the top bar, for screens shown before the app has anything to put there.</summary>
     public virtual bool ShowTopBar => true;
 
+    /// <summary>
+    /// Whether the shell's chords work here: LB with RB for the sidebar, LT with RT for the quick
+    /// actions ring. Off for screens without the top bar or footer, such as sign-in and a video.
+    /// </summary>
+    public virtual bool AllowsChords => ShowChrome && ShowTopBar;
+
     protected void SetInfo(string info)
     {
         Info = info;

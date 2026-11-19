@@ -75,6 +75,18 @@ public partial class AppShell : Control
     /// </summary>
     protected virtual bool SidebarCollapses => Tabs is { Count: > 0 } tabs && tabs.All(tab => tab.Icon != null);
 
+    /// <summary>
+    /// The choices in the ring that LT with RT opens, clockwise from the top. Four or eight map
+    /// exactly onto the D-pad. Null or empty leaves the ring out.
+    /// </summary>
+    protected virtual IReadOnlyList<(string Label, Action Action)> QuickActions => null;
+
+    /// <summary>The words in the middle of the quick actions ring.</summary>
+    protected virtual string QuickActionsTitle => "Quick actions";
+
+    /// <summary>The shell's chords. An app adds its own here.</summary>
+    public ChordWatcher Chords { get; private set; }
+
     /// <summary>Applies the style, palette and background from the app's saved settings.</summary>
     protected virtual void ApplyAppearance() =>
         Appearance.Apply(Appearance.GlassStyle, Palettes.DefaultBackground, Palettes.Find(null));
@@ -162,6 +174,11 @@ public partial class AppShell : Control
         Overlays = new OverlayHost { FocusFallback = () => Current?.RestoreFocus() };
         AddChild(Overlays);
 
+        Chords = new ChordWatcher { Enabled = () => Current?.AllowsChords ?? false };
+        AddChild(Chords);
+        Chords.Add(ToggleSidebar, Key.F4, PadInput.LB, PadInput.RB);
+        Chords.Add(ToggleQuickActions, Key.F5, PadInput.LT, PadInput.RT);
+
         BuildToast();
         RunDeveloperArguments(args);
         _ = StartAsync(args);
@@ -205,6 +222,24 @@ public partial class AppShell : Control
                 Input.ParseInputEvent(new InputEventAction { Action = action[5..], Pressed = true });
                 await Task.Delay(700);
                 Input.ParseInputEvent(new InputEventAction { Action = action[5..], Pressed = false });
+            }
+            else if (action.StartsWith("chord:"))
+            {
+                // "chord:9+10" presses controller buttons together. "lt" and "rt" are the triggers.
+                var parts = action[6..].Split('+');
+                foreach (var down in new[] { true, false })
+                {
+                    foreach (var part in parts)
+                    {
+                        if (part is "lt" or "rt")
+                        {
+                            var axis = part == "lt" ? JoyAxis.TriggerLeft : JoyAxis.TriggerRight;
+                            Input.ParseInputEvent(new InputEventJoypadMotion { Axis = axis, AxisValue = down ? 1 : 0 });
+                        }
+                        else { Input.ParseInputEvent(new InputEventJoypadButton { ButtonIndex = (JoyButton)int.Parse(part), Pressed = down }); }
+                    }
+                    await Task.Delay(150);
+                }
             }
             else if (action.StartsWith("joy:"))
             {
@@ -500,6 +535,35 @@ public partial class AppShell : Control
     {
         var index = TabIndex(Current?.Tab);
         if (index >= 0) { _tabButtons[index].GrabFocus(); }
+    }
+
+    /// <summary>LB with RB: moves focus to the sidebar, or back to where it was in the page.</summary>
+    private void ToggleSidebar()
+    {
+        // The first shoulder button down has started a tap. The chord replaces it.
+        _shoulder = null;
+        var screen = Current;
+        if (Overlays.HasOverlay || screen?.Tab == null) { return; }
+        UiSounds.Play(UiSounds.Sound.Switch);
+        if (GetViewport().GuiGetFocusOwner() is Button focused && _tabButtons.Contains(focused)) { screen.RestoreFocus(); }
+        else
+        {
+            screen.SaveFocus();
+            FocusSidebar();
+        }
+    }
+
+    /// <summary>LT with RT: opens the quick actions ring, or closes it.</summary>
+    private void ToggleQuickActions()
+    {
+        if (Overlays.Top is RadialMenu open)
+        {
+            Overlays.Close(open);
+            return;
+        }
+        var items = QuickActions;
+        if (Overlays.HasOverlay || items == null || items.Count == 0) { return; }
+        ShowRadial(QuickActionsTitle, items);
     }
 
     private void BuildFooter(Control layout)
