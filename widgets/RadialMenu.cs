@@ -91,13 +91,13 @@ public partial class RadialMenu : Overlay
             var points = Slice(centre, middle - span / 2, middle + span / 2);
             var selected = i == _selected;
             _dial.DrawColoredPolygon(points, selected ? surface.Lerp(Appearance.Accent, 0.3f) : surface);
-            if (selected)
-            {
-                var outline = new Vector2[points.Length + 1];
-                points.CopyTo(outline, 0);
-                outline[^1] = points[0];
-                _dial.DrawPolyline(outline, Appearance.Accent, 3, true);
-            }
+
+            // Every slice has a faint edge, so the ring reads over a dark page. The marked one takes the accent.
+            var outline = new Vector2[points.Length + 1];
+            points.CopyTo(outline, 0);
+            outline[^1] = points[0];
+            if (selected) { _dial.DrawPolyline(outline, Appearance.Accent, 3, true); }
+            else { _dial.DrawPolyline(outline, new Color(Appearance.BodyText, 0.22f), 1.5f, true); }
         }
     }
 
