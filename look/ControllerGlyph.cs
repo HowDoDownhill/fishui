@@ -219,10 +219,11 @@ public static class ControllerGlyph
             }
         }
 
-        return LoadCombinedIcon(string.Join("+", iconPaths), iconPaths.ToArray());
+        return LoadCombinedIcon(string.Join("+", iconPaths), iconPaths.ToArray(), true);
     }
 
-    private static Texture2D LoadCombinedIcon(string cacheKey, string[] iconPaths)
+    /// <param name="joinedByPlus">Draws a plus sign between the icons, for inputs pressed together.</param>
+    private static Texture2D LoadCombinedIcon(string cacheKey, string[] iconPaths, bool joinedByPlus = false)
     {
         if (combinedIcons.TryGetValue(cacheKey, out Texture2D cachedIcon))
         {
@@ -255,11 +256,24 @@ public static class ControllerGlyph
         }
 
         int iconHeight = images[0].GetHeight();
-        int combinedWidth = CombinedIconGap * (images.Count - 1);
 
         foreach (Image image in images)
         {
             image.Resize(image.GetWidth() * iconHeight / image.GetHeight(), iconHeight);
+        }
+
+        if (joinedByPlus)
+        {
+            for (int index = images.Count - 1; index > 0; index--)
+            {
+                images.Insert(index, DrawPlus(iconHeight));
+            }
+        }
+
+        int combinedWidth = CombinedIconGap * (images.Count - 1);
+
+        foreach (Image image in images)
+        {
             combinedWidth += image.GetWidth();
         }
 
@@ -275,5 +289,16 @@ public static class ControllerGlyph
         Texture2D combinedIcon = ImageTexture.CreateFromImage(combinedImage);
         combinedIcons[cacheKey] = combinedIcon;
         return combinedIcon;
+    }
+
+    // A white plus sign as tall as the icons it sits between, so the button's tint colours it with them.
+    private static Image DrawPlus(int iconHeight)
+    {
+        int armLength = iconHeight * 3 / 10;
+        int thickness = Math.Max(2, iconHeight / 14);
+        Image plus = Image.CreateEmpty(armLength, iconHeight, false, Image.Format.Rgba8);
+        plus.FillRect(new Rect2I(0, (iconHeight - thickness) / 2, armLength, thickness), Colors.White);
+        plus.FillRect(new Rect2I((armLength - thickness) / 2, (iconHeight - armLength) / 2, thickness, armLength), Colors.White);
+        return plus;
     }
 }
