@@ -25,7 +25,7 @@ public readonly record struct PadInput(JoyButton? Button, JoyAxis? Axis)
 /// </summary>
 public partial class ChordWatcher : Node
 {
-    private sealed record Chord(PadInput[] Parts, Key? Key, Action Action);
+    private sealed record Chord(PadInput[] Parts, Key? Key, Action Action, string Label = null, Func<bool> Shown = null);
 
     private const float TriggerDown = 0.5f;
 
@@ -51,6 +51,23 @@ public partial class ChordWatcher : Node
 
     /// <param name="key">A keyboard key that runs the same action, or null.</param>
     public void Add(Action action, Key? key, params PadInput[] parts) => _chords.Add(new Chord(parts, key, action));
+
+    /// <summary>Adds a chord that has a footer prompt.</summary>
+    /// <param name="label">The prompt's words, such as "Sidebar".</param>
+    /// <param name="shown">Whether the prompt shows right now. Null means always.</param>
+    public void Add(string label, Func<bool> shown, Action action, Key? key, params PadInput[] parts) =>
+        _chords.Add(new Chord(parts, key, action, label, shown));
+
+    /// <summary>A footer prompt for each named chord that is available now, in the order added.</summary>
+    public IEnumerable<Button> BuildPrompts()
+    {
+        if (Enabled != null && !Enabled()) { yield break; }
+        foreach (var chord in _chords)
+        {
+            if (chord.Label == null || (chord.Shown != null && !chord.Shown())) { continue; }
+            yield return Ui.ChordHint(chord.Label, () => { if (Enabled == null || Enabled()) { chord.Action(); } }, chord.Parts);
+        }
+    }
 
     public override void _Input(InputEvent e)
     {

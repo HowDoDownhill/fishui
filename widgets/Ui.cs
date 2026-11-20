@@ -96,6 +96,27 @@ public static class Ui
     /// <summary>A footer prompt: the glyph for an input action beside its label. Clicking it performs the action.</summary>
     public static Button Hint(string action, string label, int fontSize = 0)
     {
+        var button = PromptButton(label, fontSize);
+        ControllerGlyph.Apply(button, action);
+        button.Pressed += () =>
+        {
+            Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = true });
+            Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = false });
+        };
+        return button;
+    }
+
+    /// <summary>A footer prompt for a chord: the glyphs of its inputs side by side, then its label. Clicking it runs the action.</summary>
+    public static Button ChordHint(string label, System.Action pressed, params PadInput[] parts)
+    {
+        var button = PromptButton(label, 0);
+        ControllerGlyph.ApplyChord(button, parts);
+        if (pressed != null) { button.Pressed += pressed; }
+        return button;
+    }
+
+    private static Button PromptButton(string label, int fontSize)
+    {
         var button = new Button
         {
             Text = label,
@@ -109,12 +130,6 @@ public static class Ui
             button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
         }
         if (fontSize > 0) { button.AddThemeFontSizeOverride("font_size", fontSize); }
-        ControllerGlyph.Apply(button, action);
-        button.Pressed += () =>
-        {
-            Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = true });
-            Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = false });
-        };
         return button;
     }
 

@@ -147,7 +147,7 @@ An app that has its own root node can use the look without `AppShell`: call `App
 | `QuickPanel` | A panel that slides in from the right with sliders, toggles and actions, for use over a game or video. |
 | `Ui.NavIcon` | The library's line icons for sidebar pages. Giving every `ShellTab` an icon makes the sidebar narrow to a strip of icons while focus is in the page. |
 | `OverlayHost` | The layer that holds open overlays and gives focus back when one closes. `AppShell` has one. An app with its own scenes adds one with `RoutesInput` on and gets every overlay without the rest of the shell. |
-| `ChordWatcher` | Runs an action when controller inputs are pressed together. `AppShell` has one with two chords: LB with RB moves focus to the sidebar and back, and LT with RT opens the ring of `QuickActions`. `HoldsBackSingles` suits apps whose shoulder buttons act the moment they go down. |
+| `ChordWatcher` | Runs an action when controller inputs are pressed together. `AppShell` has one with two chords: LB with RB moves focus to the sidebar and back, and LT with RT opens the ring of `QuickActions`. `HoldsBackSingles` suits apps whose shoulder buttons act the moment they go down. A chord added with a label gets a prompt at the left of the footer; `BuildPrompts` and `Ui.ChordHint` make the same prompts for an app with its own footer. |
 | `RadialMenu` | A ring of up to eight choices picked by stick or D-pad direction. `AppShell.ShowRadial` opens one. |
 | `HoldButton`, `ConfirmOverlay` | A button that runs only after being held, and the question built on it. |
 | `SettingsPage`, `SettingRow` | Sections on the left, rows on the right, help for the focused row. |

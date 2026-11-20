@@ -29,15 +29,28 @@ public static class ControllerGlyph
         { (int)JoyButton.Back, new[] { "xboxone/view", "ps5/share", "switch/minus" } }
     };
 
+    private static readonly Dictionary<PadInput, string> ChordIconPaths = new Dictionary<PadInput, string>
+    {
+        { PadInput.LB, "xbox360/lb" },
+        { PadInput.RB, "xbox360/rb" },
+        { PadInput.LT, "xbox360/lt" },
+        { PadInput.RT, "xbox360/rt" },
+        { PadInput.L3, "xbox360/l_stick_click" },
+        { PadInput.R3, "xbox360/r_stick_click" },
+        { PadInput.Select, "xboxone/view" },
+        { PadInput.Start, "xboxone/menu" }
+    };
+
     private class GlyphButton
     {
         public WeakReference<Button> Button;
         public string ActionName;
+        public PadInput[] Parts;
         public ControllerIconTexture Glyph;
     }
 
     private static readonly List<GlyphButton> glyphButtons = new List<GlyphButton>();
-    private static readonly Dictionary<int, Texture2D> combinedIcons = new Dictionary<int, Texture2D>();
+    private static readonly Dictionary<string, Texture2D> combinedIcons = new Dictionary<string, Texture2D>();
     private static bool showsNeutralPrompts;
     private static bool isFollowingLastController;
 
@@ -60,6 +73,18 @@ public static class ControllerGlyph
             Glyph = For(actionName)
         };
 
+        Track(button, glyphButton);
+    }
+
+    /// <summary>Puts the glyphs for a chord's inputs on a button, side by side. They show while a controller is in use.</summary>
+    public static void ApplyChord(Button button, params PadInput[] parts)
+    {
+        FollowLastController();
+        Track(button, new GlyphButton { Button = new WeakReference<Button>(button), Parts = parts });
+    }
+
+    private static void Track(Button button, GlyphButton glyphButton)
+    {
         button.ExpandIcon = false;
         button.IconAlignment = HorizontalAlignment.Left;
         button.AddThemeConstantOverride("h_separation", GlyphSpacing);
@@ -135,9 +160,20 @@ public static class ControllerGlyph
             return;
         }
 
+        if (glyphButton.Parts != null)
+        {
+            Texture2D chordIcon = showsNeutralPrompts ? LoadChordIcon(glyphButton.Parts) : null;
+            button.Icon = chordIcon;
+            if (chordIcon != null)
+            {
+                button.AddThemeConstantOverride("icon_max_width", chordIcon.GetWidth() * GlyphSize / chordIcon.GetHeight());
+            }
+            return;
+        }
+
         int buttonIndex = showsNeutralPrompts ? ReadJoypadButton(glyphButton.ActionName) : -1;
         Texture2D combinedIcon = NeutralCombinedIconPaths.TryGetValue(buttonIndex, out string[] combinedPaths)
-            ? LoadCombinedIcon(buttonIndex, combinedPaths)
+            ? LoadCombinedIcon(buttonIndex.ToString(), combinedPaths)
             : null;
 
         if (combinedIcon != null)
@@ -171,9 +207,24 @@ public static class ControllerGlyph
         return -1;
     }
 
-    private static Texture2D LoadCombinedIcon(int buttonIndex, string[] iconPaths)
+    private static Texture2D LoadChordIcon(PadInput[] parts)
     {
-        if (combinedIcons.TryGetValue(buttonIndex, out Texture2D cachedIcon))
+        var iconPaths = new List<string>();
+
+        foreach (PadInput part in parts)
+        {
+            if (ChordIconPaths.TryGetValue(part, out string iconPath))
+            {
+                iconPaths.Add(iconPath);
+            }
+        }
+
+        return LoadCombinedIcon(string.Join("+", iconPaths), iconPaths.ToArray());
+    }
+
+    private static Texture2D LoadCombinedIcon(string cacheKey, string[] iconPaths)
+    {
+        if (combinedIcons.TryGetValue(cacheKey, out Texture2D cachedIcon))
         {
             return cachedIcon;
         }
@@ -222,7 +273,7 @@ public static class ControllerGlyph
         }
 
         Texture2D combinedIcon = ImageTexture.CreateFromImage(combinedImage);
-        combinedIcons[buttonIndex] = combinedIcon;
+        combinedIcons[cacheKey] = combinedIcon;
         return combinedIcon;
     }
 }

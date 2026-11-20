@@ -23,6 +23,7 @@ public partial class AppShell : Control
     private IReadOnlyList<ShellTab> _tabs = Array.Empty<ShellTab>();
     private Control _screenHost;
     private HBoxContainer _hints;
+    private HBoxContainer _chordHints;
     private Control _footer;
     private Control _sidebar;
     private Control _sidebarSlot;
@@ -81,8 +82,11 @@ public partial class AppShell : Control
     /// </summary>
     protected virtual IReadOnlyList<(string Label, Action Action)> QuickActions => null;
 
-    /// <summary>The words in the middle of the quick actions ring.</summary>
+    /// <summary>The words in the middle of the quick actions ring, and on its footer prompt.</summary>
     protected virtual string QuickActionsTitle => "Quick actions";
+
+    /// <summary>The words on the footer prompt for LB with RB.</summary>
+    protected virtual string SidebarPromptLabel => "Sidebar";
 
     /// <summary>The shell's chords. An app adds its own here.</summary>
     public ChordWatcher Chords { get; private set; }
@@ -176,8 +180,8 @@ public partial class AppShell : Control
 
         Chords = new ChordWatcher { Enabled = () => Current?.AllowsChords ?? false };
         AddChild(Chords);
-        Chords.Add(ToggleSidebar, Key.F4, PadInput.LB, PadInput.RB);
-        Chords.Add(ToggleQuickActions, Key.F5, PadInput.LT, PadInput.RT);
+        Chords.Add(SidebarPromptLabel, () => Current?.Tab != null, ToggleSidebar, Key.F4, PadInput.LB, PadInput.RB);
+        Chords.Add(QuickActionsTitle, () => QuickActions is { Count: > 0 }, ToggleQuickActions, Key.F5, PadInput.LT, PadInput.RT);
 
         BuildToast();
         RunDeveloperArguments(args);
@@ -568,9 +572,17 @@ public partial class AppShell : Control
 
     private void BuildFooter(Control layout)
     {
-        _hints = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End, MouseFilter = MouseFilterEnum.Ignore };
-        _hints.AddThemeConstantOverride("separation", 32);
-        _footer = Ui.Chrome(_hints, Ui.ChromePad, 10);
+        // Chords work on every page, so their prompts keep the left. The page's own prompts keep the right.
+        _chordHints = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        _hints = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End, MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", 32);
+        foreach (var group in new[] { _chordHints, _hints })
+        {
+            group.AddThemeConstantOverride("separation", 32);
+            row.AddChild(group);
+        }
+        _footer = Ui.Chrome(row, Ui.ChromePad, 10);
         layout.AddChild(_footer);
     }
 
@@ -596,14 +608,18 @@ public partial class AppShell : Control
             if (i == tabIndex) { _tabButtons[i].AddThemeStyleboxOverride("normal", Ui.CurrentMarker()); }
             else { _tabButtons[i].RemoveThemeStyleboxOverride("normal"); }
         }
-        foreach (var child in _hints.GetChildren())
+        foreach (var group in new[] { _chordHints, _hints })
         {
-            _hints.RemoveChild(child);
-            child.QueueFree();
+            foreach (var child in group.GetChildren())
+            {
+                group.RemoveChild(child);
+                child.QueueFree();
+            }
         }
         if (screen != null)
         {
             foreach (var (action, label) in screen.Hints) { _hints.AddChild(Ui.Hint(action, label)); }
+            foreach (var prompt in Chords.BuildPrompts()) { _chordHints.AddChild(prompt); }
         }
         OnChromeRefreshed(screen);
     }
