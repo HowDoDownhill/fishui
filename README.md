@@ -93,6 +93,7 @@ A `Screen` is one full page. Build its controls in `OnEnter`.
 | `OnInput`, `OnRawInput` | Input the focused control did not use, and input before focus sees it. |
 | `OnBack` | B. Return true to stay open. |
 | `OnShoulderHold` | LB or RB held. |
+| `OnTrigger`, `TriggerLabel` | LT or RT pressed on its own, and the words for its footer prompt. |
 | `OnResume`, `OnQuitAsync` | A screen above closed; the app is exiting. |
 
 ### Input
@@ -143,6 +144,7 @@ An app that has its own root node can use the look without `AppShell`: call `App
 | Class | Purpose |
 |---|---|
 | `Card`, `CardRow`, `RowPage` | Artwork tiles, a sideways-scrolling row of them, and a page of rows. |
+| `CardGrid` | A wall of cards that wraps into rows, for a whole library on one page. `StepLetter` jumps through the alphabet from a screen's `OnTrigger`, `NearEnd` asks for the next page of cards, and `LoadsImagesNearView` keeps artwork loaded only around the view. |
 | `HeroBanner` | A banner above a `RowPage` that describes the focused card. Call `Display` from `RowPage.CardFocused`. |
 | `QuickPanel` | A panel that slides in from the right with sliders, toggles and actions, for use over a game or video. |
 | `Ui.NavIcon` | The library's line icons for sidebar pages. Giving every `ShellTab` an icon makes the sidebar narrow to a strip of icons while focus is in the page. |
@@ -177,7 +179,7 @@ Artwork is read from `res://assets/steam/` by default: `capsule.png`, `wide_caps
 | Argument | Effect |
 |---|---|
 | `--windowed` | Start in a window. |
-| `--keys ui_down,hold:fish_rb,joy:0,quit` | Press input actions in order. `hold:` holds one down. `joy:N` presses controller button N. `quit` exits. |
+| `--keys ui_down,hold:fish_rb,joy:0,chord:lt+rt,quit` | Press input actions in order. `hold:` holds one down. `joy:N` presses controller button N. `chord:` presses buttons or triggers together, and `chord:rt` is one trigger. `quit` exits. |
 | `--shot <png> [seconds]` | Save a screenshot after a delay, then exit. |
 
 ## Licence

@@ -115,6 +115,15 @@ public static class Ui
         return button;
     }
 
+    /// <summary>A footer prompt for inputs that share one job, such as LT and RT: their glyphs side by side, then the label.</summary>
+    public static Button GroupHint(string label, System.Action pressed, params PadInput[] parts)
+    {
+        var button = PromptButton(label, 0);
+        ControllerGlyph.ApplyGroup(button, parts);
+        if (pressed != null) { button.Pressed += pressed; }
+        return button;
+    }
+
     private static Button PromptButton(string label, int fontSize)
     {
         var button = new Button

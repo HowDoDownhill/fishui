@@ -46,6 +46,7 @@ public static class ControllerGlyph
         public WeakReference<Button> Button;
         public string ActionName;
         public PadInput[] Parts;
+        public bool PressedTogether;
         public ControllerIconTexture Glyph;
     }
 
@@ -78,6 +79,13 @@ public static class ControllerGlyph
 
     /// <summary>Puts the glyphs for a chord's inputs on a button, side by side. They show while a controller is in use.</summary>
     public static void ApplyChord(Button button, params PadInput[] parts)
+    {
+        FollowLastController();
+        Track(button, new GlyphButton { Button = new WeakReference<Button>(button), Parts = parts, PressedTogether = true });
+    }
+
+    /// <summary>Puts the glyphs for inputs that share one job on a button, side by side. They show while a controller is in use.</summary>
+    public static void ApplyGroup(Button button, params PadInput[] parts)
     {
         FollowLastController();
         Track(button, new GlyphButton { Button = new WeakReference<Button>(button), Parts = parts });
@@ -162,7 +170,7 @@ public static class ControllerGlyph
 
         if (glyphButton.Parts != null)
         {
-            Texture2D chordIcon = showsNeutralPrompts ? LoadChordIcon(glyphButton.Parts) : null;
+            Texture2D chordIcon = showsNeutralPrompts ? LoadChordIcon(glyphButton.Parts, glyphButton.PressedTogether) : null;
             button.Icon = chordIcon;
             if (chordIcon != null)
             {
@@ -207,7 +215,7 @@ public static class ControllerGlyph
         return -1;
     }
 
-    private static Texture2D LoadChordIcon(PadInput[] parts)
+    private static Texture2D LoadChordIcon(PadInput[] parts, bool pressedTogether)
     {
         var iconPaths = new List<string>();
 
@@ -219,7 +227,7 @@ public static class ControllerGlyph
             }
         }
 
-        return LoadCombinedIcon(string.Join("+", iconPaths), iconPaths.ToArray(), true);
+        return LoadCombinedIcon(string.Join(pressedTogether ? "+" : ",", iconPaths), iconPaths.ToArray(), pressedTogether);
     }
 
     /// <param name="joinedByPlus">Draws a plus sign between the icons, for inputs pressed together.</param>

@@ -59,6 +59,15 @@ public abstract partial class Screen : Control
     /// <summary>Called when LB or RB is held. Return true when the screen used it, such as to open a jump menu.</summary>
     public virtual bool OnShoulderHold() => false;
 
+    /// <summary>
+    /// Called when LT (-1) or RT (1) is pressed and let go on its own, or for the [ and ] keys.
+    /// Return true when the screen used it, such as to step a grid through the alphabet.
+    /// </summary>
+    public virtual bool OnTrigger(int direction) => false;
+
+    /// <summary>The words for a footer prompt that shows LT and RT, such as "Letter". Null leaves the prompt out.</summary>
+    public virtual string TriggerLabel => null;
+
     /// <summary>Called for B. Return true when the screen handled it and should stay open.</summary>
     public virtual bool OnBack() => false;
 

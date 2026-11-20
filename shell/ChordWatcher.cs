@@ -49,6 +49,12 @@ public partial class ChordWatcher : Node
     /// <summary>Checked before a chord runs. Null means always.</summary>
     public Func<bool> Enabled;
 
+    /// <summary>
+    /// Raised when an input that belongs to a chord is pressed and let go on its own. An action
+    /// that shares a button with a chord listens here, and so never runs as the chord forms.
+    /// </summary>
+    public event Action<PadInput> Tapped;
+
     /// <param name="key">A keyboard key that runs the same action, or null.</param>
     public void Add(Action action, Key? key, params PadInput[] parts) => _chords.Add(new Chord(parts, key, action));
 
@@ -87,9 +93,13 @@ public partial class ChordWatcher : Node
 
         if (!pressed)
         {
-            _downSince.Remove(part);
+            var wasDown = _downSince.Remove(part);
             if (_used.Remove(part)) { GetViewport().SetInputAsHandled(); }
-            else { Replay(part); }
+            else
+            {
+                Replay(part);
+                if (wasDown) { Tapped?.Invoke(part); }
+            }
             return;
         }
 

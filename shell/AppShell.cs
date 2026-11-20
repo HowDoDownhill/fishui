@@ -182,6 +182,11 @@ public partial class AppShell : Control
         AddChild(Chords);
         Chords.Add(SidebarPromptLabel, () => Current?.Tab != null, ToggleSidebar, Key.F4, PadInput.LB, PadInput.RB);
         Chords.Add(QuickActionsTitle, () => QuickActions is { Count: > 0 }, ToggleQuickActions, Key.F5, PadInput.LT, PadInput.RT);
+        Chords.Tapped += part =>
+        {
+            if (part == PadInput.LT) { Trigger(-1); }
+            else if (part == PadInput.RT) { Trigger(1); }
+        };
 
         BuildToast();
         RunDeveloperArguments(args);
@@ -570,6 +575,12 @@ public partial class AppShell : Control
         ShowRadial(QuickActionsTitle, items);
     }
 
+    /// <summary>A trigger on its own goes to the page. Both together are the quick actions chord.</summary>
+    private void Trigger(int direction)
+    {
+        if (!Overlays.HasOverlay) { Current?.OnTrigger(direction); }
+    }
+
     private void BuildFooter(Control layout)
     {
         // Chords work on every page, so their prompts keep the left. The page's own prompts keep the right.
@@ -618,6 +629,10 @@ public partial class AppShell : Control
         }
         if (screen != null)
         {
+            if (screen.TriggerLabel != null)
+            {
+                _hints.AddChild(Ui.GroupHint(screen.TriggerLabel, null, PadInput.LT, PadInput.RT));
+            }
             foreach (var (action, label) in screen.Hints) { _hints.AddChild(Ui.Hint(action, label)); }
             foreach (var prompt in Chords.BuildPrompts()) { _chordHints.AddChild(prompt); }
         }
@@ -691,6 +706,11 @@ public partial class AppShell : Control
 
         var screen = Current;
         if (screen == null) { return; }
+        if (e is InputEventKey { Pressed: true, PhysicalKeycode: Key.Bracketleft or Key.Bracketright } bracket)
+        {
+            if (screen.OnTrigger(bracket.PhysicalKeycode == Key.Bracketleft ? -1 : 1)) { GetViewport().SetInputAsHandled(); }
+            return;
+        }
         if (screen.OnInput(e)) { GetViewport().SetInputAsHandled(); }
         else if (e.IsActionPressed(Actions.Back))
         {
