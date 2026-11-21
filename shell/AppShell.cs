@@ -88,6 +88,15 @@ public partial class AppShell : Control
     /// <summary>The words on the footer prompt for LB with RB.</summary>
     protected virtual string SidebarPromptLabel => "Sidebar";
 
+    /// <summary>
+    /// The Start menu's groups of choices. Start opens them in a panel at the right edge from
+    /// every page that has the bars, under the page's own group. Null means no Start menu.
+    /// </summary>
+    protected virtual IReadOnlyList<MenuGroup> StartMenu => null;
+
+    /// <summary>The words on the Start menu's footer prompt.</summary>
+    protected virtual string StartMenuLabel => "Menu";
+
     /// <summary>The shell's chords. An app adds its own here.</summary>
     public ChordWatcher Chords { get; private set; }
 
@@ -575,6 +584,21 @@ public partial class AppShell : Control
         ShowRadial(QuickActionsTitle, items);
     }
 
+    /// <summary>True on a page where Start opens the menu: one with the bars, in an app that has a menu.</summary>
+    private bool HasStartMenu(Screen screen) =>
+        screen != null && screen.ShowChrome && screen.ShowTopBar && (StartMenu is { Count: > 0 } || screen.PageMenu != null);
+
+    /// <summary>Opens the Start menu: the current page's group, then the app's.</summary>
+    public void OpenStartMenu()
+    {
+        var screen = Current;
+        if (Overlays.HasOverlay || !HasStartMenu(screen)) { return; }
+        var groups = new List<MenuGroup>();
+        if (screen.PageMenu != null) { groups.Add(screen.PageMenu); }
+        if (StartMenu != null) { groups.AddRange(StartMenu); }
+        OpenOverlay(new SideMenu(groups));
+    }
+
     /// <summary>A trigger on its own goes to the page. Both together are the quick actions chord.</summary>
     private void Trigger(int direction)
     {
@@ -633,7 +657,13 @@ public partial class AppShell : Control
             {
                 _hints.AddChild(Ui.GroupHint(screen.TriggerLabel, null, PadInput.LT, PadInput.RT));
             }
-            foreach (var (action, label) in screen.Hints) { _hints.AddChild(Ui.Hint(action, label)); }
+            var usesStart = false;
+            foreach (var (action, label) in screen.Hints)
+            {
+                usesStart |= action == Actions.Start;
+                _hints.AddChild(Ui.Hint(action, label));
+            }
+            if (!usesStart && HasStartMenu(screen)) { _hints.AddChild(Ui.Hint(Actions.Start, StartMenuLabel)); }
             foreach (var prompt in Chords.BuildPrompts()) { _chordHints.AddChild(prompt); }
         }
         OnChromeRefreshed(screen);
@@ -712,6 +742,11 @@ public partial class AppShell : Control
             return;
         }
         if (screen.OnInput(e)) { GetViewport().SetInputAsHandled(); }
+        else if (e.IsActionPressed(Actions.Start) && HasStartMenu(screen))
+        {
+            OpenStartMenu();
+            GetViewport().SetInputAsHandled();
+        }
         else if (e.IsActionPressed(Actions.Back))
         {
             Back();

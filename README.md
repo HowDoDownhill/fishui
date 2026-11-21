@@ -75,7 +75,7 @@ prompts. It keeps a stack of screens and a stack of modal overlays, and sends in
 | `ReapplyAppearance` | Apply changed appearance settings and rebuild the current page. |
 | `QuitAsync` | Exit, after the top screen's `OnQuitAsync`. |
 
-Hooks to override: `Tabs`, `ApplyAppearance`, `InterfaceSize`, `StartFullscreen`, `WindowedSize`,
+Hooks to override: `Tabs`, `StartMenu`, `ApplyAppearance`, `InterfaceSize`, `StartFullscreen`, `WindowedSize`,
 `OnFullscreenChanged`, `TopBarTitle`, `TopBarAvailable`, `BuildTopBarStart`, `BuildTopBarEnd`,
 `OnChromeRefreshed`, `StartAsync`, `QuitAsync`.
 
@@ -93,6 +93,7 @@ A `Screen` is one full page. Build its controls in `OnEnter`.
 | `OnInput`, `OnRawInput` | Input the focused control did not use, and input before focus sees it. |
 | `OnBack` | B. Return true to stay open. |
 | `OnShoulderHold` | LB or RB held. |
+| `PageMenu` | This page's own group in the Start menu. |
 | `OnTrigger`, `TriggerLabel` | LT or RT pressed on its own, and the words for its footer prompt. |
 | `OnResume`, `OnQuitAsync` | A screen above closed; the app is exiting. |
 
@@ -146,6 +147,7 @@ An app that has its own root node can use the look without `AppShell`: call `App
 | `Card`, `CardRow`, `RowPage` | Artwork tiles, a sideways-scrolling row of them, and a page of rows. |
 | `CardGrid` | A wall of cards that wraps into rows, for a whole library on one page. `StepLetter` jumps through the alphabet from a screen's `OnTrigger`, `NearEnd` asks for the next page of cards, and `LoadsImagesNearView` keeps artwork loaded only around the view. |
 | `HeroBanner` | A banner above a `RowPage` that describes the focused card. Call `Display` from `RowPage.CardFocused`. |
+| `SideMenu`, `MenuGroup` | The Start menu: a panel at the right edge with choices in headed groups. `AppShell` opens it on Start from every page with the bars, built from the page's `PageMenu` and the app's `StartMenu`, and adds its prompt to the footer. A page that handles Start itself keeps it. |
 | `QuickPanel` | A panel that slides in from the right with sliders, toggles and actions, for use over a game or video. |
 | `Ui.NavIcon` | The library's line icons for sidebar pages. Giving every `ShellTab` an icon makes the sidebar narrow to a strip of icons while focus is in the page. |
 | `OverlayHost` | The layer that holds open overlays and gives focus back when one closes. `AppShell` has one. An app with its own scenes adds one with `RoutesInput` on and gets every overlay without the rest of the shell. |

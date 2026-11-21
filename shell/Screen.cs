@@ -65,6 +65,12 @@ public abstract partial class Screen : Control
     /// </summary>
     public virtual bool OnTrigger(int direction) => false;
 
+    /// <summary>
+    /// This page's own group of choices for the Start menu, shown above the app's groups. Null
+    /// leaves the menu with the app's groups alone.
+    /// </summary>
+    public virtual MenuGroup PageMenu => null;
+
     /// <summary>The words for a footer prompt that shows LT and RT, such as "Letter". Null leaves the prompt out.</summary>
     public virtual string TriggerLabel => null;
 
