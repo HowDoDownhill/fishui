@@ -7,7 +7,7 @@ shader_type canvas_item;
 uniform float blur_radius : hint_range(0.0, 150.0) = 45.0;
 uniform vec4 mix_color : source_color = vec4(0.0, 0.0, 0.0, 0.4);
 uniform float luminosity_floor : hint_range(0.0, 1.0) = 0.0;
-uniform int sample_count : hint_range(0, 64) = 8;
+uniform int sample_count : hint_range(1, 64) = 16;
 
 void fragment() {
     COLOR = vec4(mix_color.rgb, 1.0);
