@@ -34,8 +34,10 @@ public static class Appearance
     private const float DarkVignette = 0.7f;
     private const float LightVignette = 0.2f;
 
-    // Flat panels sit one step off the background: lighter on dark palettes, near white on light ones.
-    private const float DarkPanelLift = 0.08f;
+    // Flat panels sit one step off the background: brighter in the background's own hue on dark
+    // palettes, near white on light ones.
+    private const float DarkPanelLift = 0.1f;
+    private const float DarkPanelSaturation = 0.85f;
     private const float LightPanelLift = 0.7f;
 
     // How much of the palette's background colour the bars lay over the window background.
@@ -159,7 +161,11 @@ public static class Appearance
             material.Shader = shader;
         }
 
-        Color surface = colors.Bg.Lerp(Colors.White, IsLight ? LightPanelLift : DarkPanelLift);
+        // A dark surface keeps the background's hue, so it sits with the bars and frost around it.
+        // Lifting toward white would wash a tinted palette out to grey.
+        Color surface = IsLight
+            ? colors.Bg.Lerp(Colors.White, LightPanelLift)
+            : Color.FromHsv(colors.Bg.H, colors.Bg.S * DarkPanelSaturation, Mathf.Min(colors.Bg.V + DarkPanelLift, 1.0f));
         surface.A = 1.0f;
         SurfaceStyle.BgColor = surface;
         SurfaceStyle.ShadowColor = new Color(0, 0, 0, IsLight ? 0.12f : 0.3f);
