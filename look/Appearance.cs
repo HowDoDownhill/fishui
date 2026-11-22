@@ -246,9 +246,50 @@ public static class Appearance
         textFieldNormalStyle.BgColor = IsLight ? Overlay(0.0f, 0.06f) : textFieldDefaultBackground;
     }
 
+    private const int ScrollBarThickness = 6;
+    private const float ScrollBarRestingAlpha = 0.22f;
+
+    private static StyleBoxFlat scrollGrabberStyle;
+    private static StyleBoxFlat scrollGrabberActiveStyle;
+
+    // A scroll bar shows where a list is. It is a thin rounded thumb with no track and no arrows,
+    // faint at rest and in the accent colour while the pointer is on it.
+    private static void ApplyScrollBars(Theme theme)
+    {
+        if (scrollGrabberStyle == null)
+        {
+            scrollGrabberStyle = BuildScrollGrabber();
+            scrollGrabberActiveStyle = BuildScrollGrabber();
+
+            var track = new StyleBoxEmpty();
+            track.SetContentMarginAll(ScrollBarThickness / 2.0f);
+
+            foreach (string scrollBarType in new[] { "VScrollBar", "HScrollBar" })
+            {
+                theme.SetStylebox("scroll", scrollBarType, track);
+                theme.SetStylebox("scroll_focus", scrollBarType, track);
+                theme.SetStylebox("grabber", scrollBarType, scrollGrabberStyle);
+                theme.SetStylebox("grabber_highlight", scrollBarType, scrollGrabberActiveStyle);
+                theme.SetStylebox("grabber_pressed", scrollBarType, scrollGrabberActiveStyle);
+            }
+        }
+
+        scrollGrabberStyle.BgColor = new Color(Text, ScrollBarRestingAlpha);
+        scrollGrabberActiveStyle.BgColor = Accent;
+    }
+
+    private static StyleBoxFlat BuildScrollGrabber()
+    {
+        var grabber = new StyleBoxFlat { AntiAliasing = true };
+        grabber.SetCornerRadiusAll(ScrollBarThickness / 2);
+        grabber.SetContentMarginAll(ScrollBarThickness / 2.0f);
+        return grabber;
+    }
+
     private static void ApplyThemeStyles(Theme theme)
     {
         ApplyTextFieldFocus(theme);
+        ApplyScrollBars(theme);
 
         if (theme.GetStylebox("pressed", "ListButton") is StyleBoxFlat pressed)
         {

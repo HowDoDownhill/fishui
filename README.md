@@ -103,6 +103,16 @@ A `Screen` is one full page. Build its controls in `OnEnter`.
 The shell registers them with keyboard keys beside the controller buttons (F2, F3, Page Up,
 Page Down, F1, F11) and repeats a held D-pad or stick direction.
 
+Conventions the apps follow, so the same press means the same thing everywhere:
+
+- LB and RB step between pages or sections. A tap steps once.
+- Holding RB opens a list to jump with. `OnShoulderHold` reports a hold of either shoulder, and
+  an app gives the jump list to RB. Holding LB does nothing more than its tap.
+- A trigger on its own does nothing unless the screen gives it a job with `OnTrigger`. Triggers
+  never step between pages: LT with RT is the quick actions chord, and a trigger that also paged
+  would move the page on the way into the chord.
+- A scroll bar shows position only. Lists scroll by moving focus.
+
 ## The look
 
 `Appearance.Apply(style, background, palette)` sets everything: the background shader, panel
@@ -116,6 +126,10 @@ redraw.
 - `Appearance.Styles` is Glass and Simple. Both share one layout: bars that run edge to edge, flat
   panels inside pages, and an accent ring on whatever has focus. Glass adds the animated background
   and frost on overlays. Simple draws flat colours and turns on Godot's low-processor mode.
+- Scroll bars are a thin rounded thumb with no track and no arrows. The thumb is faint at rest
+  and takes the accent colour under the pointer. `Appearance` styles every `VScrollBar` and
+  `HScrollBar` this way, so a list needs no styling of its own. To hide the bar on one list, set
+  its scroll mode to `ShowNever`; the list still scrolls with focus.
 - `Ui.Panel` is the flat panel for content inside a page. `Ui.MicaPanel` is the frosted one, for
   things that float over moving content such as a toast or controls over a video. `Ui.Chrome` is
   the wash behind a bar that runs to the window edge.
